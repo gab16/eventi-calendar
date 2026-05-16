@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eventi Admin — Moderation Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#FAF7F2;color:#2D2A26;font-family:'Nunito',sans-serif;font-size:15px}
+#root{min-height:100vh;display:flex;flex-direction:column}
+.fi{animation:fi .3s ease}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+input,select,textarea{font-family:'Nunito',sans-serif}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const{useState,useEffect,useCallback}=React;
+
+const API='/api/admin';
+const CATEGORIES=["Music","Food","Art","Sport","Community","Workshop","Market","Wellness","Culture","Theatre","Cinema","Festival","Presentazione libro"];
+
+const CAT_STYLE={
+  Music:{bg:"#FDE8F0",fg:"#C2185B",icon:"🎵"},Food:{bg:"#FFF3E0",fg:"#E65100",icon:"🍽"},
+  Art:{bg:"#E8EAF6",fg:"#283593",icon:"🎨"},Sport:{bg:"#E8F5E9",fg:"#2E7D32",icon:"⚽"},
+  Community:{bg:"#F3E5F5",fg:"#6A1B9A",icon:"🤝"},Workshop:{bg:"#E0F7FA",fg:"#00695C",icon:"🔧"},
+  Market:{bg:"#FFF8E1",fg:"#F57F17",icon:"🛍"},Wellness:{bg:"#E8F5E9",fg:"#1B5E20",icon:"🧘"},
+  Culture:{bg:"#EDE7F6",fg:"#4527A0",icon:"📚"},Theatre:{bg:"#FCE4EC",fg:"#880E4F",icon:"🎭"},
+  Cinema:{bg:"#EFEBE9",fg:"#4E342E",icon:"🎬"},Festival:{bg:"#FFF3E0",fg:"#BF360C",icon:"🎪"},
+  "Presentazione libro":{bg:"#E8EAF6",fg:"#1A237E",icon:"📖"},
+};
+const DEF={bg:"#F5F5F5",fg:"#616161",icon:"📌"};
+function gc(c){return CAT_STYLE[c]||DEF}
+
+const STATUS_STYLE={
+  pending:{bg:"#FFF8E1",fg:"#F57F17",label:"⏳ Pending"},
+  approved:{bg:"#E8F5E9",fg:"#2E7D32",label:"✅ Approved"},
+  rejected:{bg:"#FFEBEE",fg:"#C62828",label:"❌ Rejected"},
+};
+
+function App(){
+  const[pw,setPw]=useState('');
+  const[authed,setAuthed]=useState(false);
+  const[authErr,setAuthErr]=useState(false);
+  const[events,setEvents]=useState([]);
+  const[loading,setLoading]=useState(false);
+  const[error,setError]=useState(null);
+  const[tab,setTab]=useState('pending'); // pending|all|add
+  const[editing,setEditing]=useState(null);
+  const[saving,setSaving]=useState(null);
+  const[msg,setMsg]=useState(null);
+
+  const headers={'X-Admin-Password':pw,'Content-Type':'application/json'};
+
+  const fetchEvents=useCallback(async()=>{
+    setLoading(true);setError(null);
+    try{
+      const r=await fetch(API,{headers:{'X-Admin-Password':pw}});
+      if(r.status===401){setAuthed(false);setAuthErr(true);return}
+      if(!r.ok)throw new Error(`Error ${r.status}`);
+      const d=await r.json();
+      setEvents(d.events||[]);
+    }catch(e){setError(e.message)}
+    setLoading(false);
+  },[pw]);
+
+  async function login(){
+    setLoading(true);setAuthErr(false);
+    try{
+      const r=await fetch(API,{headers:{'X-Admin-Password':pw}});
+      if(r.status===401){setAuthErr(true);setLoading(false);return}
+      if(!r.ok)throw new Error(`Error ${r.status}`);
+      const d=await r.json();
+      setEvents(d.events||[]);
+      setAuthed(true);
+    }catch(e){setError(e.message)}
+    setLoading(false);
+  }
+
+  async function updateEvent(id,fields){
+    setSaving(id);setMsg(null);
+    try{
+      const r=await fetch(API,{method:'PATCH',headers,body:JSON.stringify({id,fields})});
+      if(!r.ok)throw new Error(`Error ${r.status}`);
+      setMsg('✅ Saved');
+      setTimeout(()=>setMsg(null),2000);
+      await fetchEvents();
+    }catch(e){setMsg('❌ '+e.message)}
+    setSaving(null);
+  }
+
+  async function setStatus(id,status){
+    await updateEvent(id,{status});
+    setEditing(null);
+  }
+
+  const pending=events.filter(e=>e.status==='pending');
+  const all=events;
+  const shown=tab==='pending'?pending:all;
+
+  // ─── LOGIN SCREEN ───
+  if(!authed){
+    return(
+      <div style={S.root}>
+        <div style={S.loginWrap}>
+          <div style={S.loginCard}>
+            <h1 style={S.loginLogo}>🔒 Eventi Admin</h1>
+            <p style={S.loginSub}>Enter password to manage events</p>
+            <input style={S.loginInput} type="password" placeholder="Password" value={pw}
+              onChange={e=>setPw(e.target.value)}
+              onKeyDown={e=>{if(e.key==='Enter')login()}}
+            />
+            {authErr&&<p style={S.loginErr}>Wrong password. Try again.</p>}
+            <button style={S.loginBtn} onClick={login} disabled={loading}>
+              {loading?'Checking…':'Sign In'}
+            </button>
+            <a href="/" style={S.loginLink}>← Back to Calendar</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── ADMIN DASHBOARD ───
+  return(
+  <div style={S.root}>
+    <nav style={S.nav}>
+      <div style={S.navLeft}>
+        <h1 style={S.navLogo}>🔒 <span style={S.navLogoTxt}>Eventi Admin</span></h1>
+      </div>
+      <div style={S.navCenter}>
+        <button style={{...S.tabBtn,...(tab==='pending'?S.tabActive:{})}} onClick={()=>{setTab('pending');setEditing(null)}}>
+          ⏳ Pending <span style={S.badge}>{pending.length}</span>
+        </button>
+        <button style={{...S.tabBtn,...(tab==='all'?S.tabActive:{})}} onClick={()=>{setTab('all');setEditing(null)}}>
+          📋 All Events <span style={S.badge}>{all.length}</span>
+        </button>
+        <button style={{...S.tabBtn,...(tab==='add'?S.tabActive:{})}} onClick={()=>{setTab('add');setEditing(null)}}>
+          ➕ Add Event
+        </button>
+      </div>
+      <div style={S.navRight}>
+        <button style={S.refreshBtn} onClick={fetchEvents} title="Refresh">🔄</button>
+        <a href="/" style={S.calLink}>📅 View Calendar</a>
+      </div>
+    </nav>
+
+    {msg&&<div style={S.toast}>{msg}</div>}
+    {error&&<div style={{...S.toast,background:"#FFEBEE",color:"#C62828"}}>⚠️ {error}</div>}
+    {loading&&<div style={S.loadBar}>Loading…</div>}
+
+    <div style={S.main}>
+      {/* EVENT LIST */}
+      {(tab==='pending'||tab==='all')&&(
+        <div className="fi">
+          {shown.length===0?(
+            <div style={S.empty}>
+              <span style={{fontSize:48}}>{tab==='pending'?'🎉':'📭'}</span>
+              <p style={{fontSize:16,marginTop:12}}>{tab==='pending'?'No events awaiting review!':'No events found'}</p>
+            </div>
+          ):editing?(
+            <EditForm event={editing} onSave={async(fields)=>{await updateEvent(editing.id,fields);setEditing(null)}} onCancel={()=>setEditing(null)} saving={saving===editing.id}/>
+          ):(
+            shown.map(ev=>{
+              const cs=gc(ev.category);
+              const ss=STATUS_STYLE[ev.status]||STATUS_STYLE.pending;
+              return(
+                <div key={ev.id} style={S.evCard} className="fi">
+                  <div style={{...S.evAccent,background:cs.fg}}/>
+                  <div style={S.evBody}>
+                    <div style={S.evTop}>
+                      <div style={{...S.evCat,background:cs.bg,color:cs.fg}}>{cs.icon} {ev.category}</div>
+                      <div style={{...S.evStatus,background:ss.bg,color:ss.fg}}>{ss.label}</div>
+                      {ev.confidence&&<span style={S.evConf}>AI: {ev.confidence}</span>}
+                    </div>
+                    <h3 style={S.evName}>{ev.event_name}</h3>
+                    <div style={S.evMeta}>
+                      <span>📅 {ev.date_start}{ev.date_end?' → '+ev.date_end:''}</span>
+                      {ev.time_start&&ev.time_start!=='00:00'&&<span>🕐 {ev.time_start}</span>}
+                      {ev.location_name&&<span>📍 {ev.location_name}</span>}
+                      {ev.price&&<span>💶 {ev.price}</span>}
+                    </div>
+                    {ev.description&&<p style={S.evDesc}>{ev.description}</p>}
+                    <div style={S.evActions}>
+                      <button style={S.editBtn} onClick={()=>setEditing(ev)}>✏️ Edit</button>
+                      {ev.status==='pending'&&<>
+                        <button style={S.approveBtn} onClick={()=>setStatus(ev.id,'approved')} disabled={saving===ev.id}>✅ Approve</button>
+                        <button style={S.rejectBtn} onClick={()=>setStatus(ev.id,'rejected')} disabled={saving===ev.id}>❌ Reject</button>
+                      </>}
+                      {ev.status==='approved'&&<button style={S.rejectBtn} onClick={()=>setStatus(ev.id,'rejected')} disabled={saving===ev.id}>Unpublish</button>}
+                      {ev.status==='rejected'&&<button style={S.approveBtn} onClick={()=>setStatus(ev.id,'approved')} disabled={saving===ev.id}>✅ Approve</button>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ADD EVENT */}
+      {tab==='add'&&(
+        <AddForm onSubmit={async(fields)=>{
+          setSaving('new');setMsg(null);
+          try{
+            const r=await fetch(`https://api.airtable.com/v0/appjmCsXtF4V9wmmt/tblhaBmXjcrE8U8ku`,{
+              method:'POST',
+              headers:{'Authorization':`Bearer ${pw}`,...headers,'Content-Type':'application/json'},
+              body:JSON.stringify({fields:{...fields,status:'pending'}}),
+            });
+            // Use admin proxy instead
+            // For now we add via the admin endpoint approach
+          }catch(e){}
+          // Actually let's use a proper approach - add via admin API
+          // We'll add a POST handler later, for now manual entry goes to Airtable directly
+          setMsg('✅ Event submitted for review');
+          setSaving(null);
+          setTab('pending');
+          await fetchEvents();
+        }}/>
+      )}
+    </div>
+
+    <footer style={S.ft}>
+      <span>Eventi Admin · tattionline.com</span>
+      <span>{events.length} total events</span>
+    </footer>
+  </div>);
+}
+
+/* ─── EDIT FORM ─── */
+function EditForm({event,onSave,onCancel,saving}){
+  const[f,setF]=useState({...event});
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  return(
+    <div style={S.formWrap} className="fi">
+      <div style={S.formHeader}>
+        <button style={S.backBtn} onClick={onCancel}>← Cancel</button>
+        <h2 style={S.formTitle}>Edit Event</h2>
+      </div>
+      <div style={S.formGrid}>
+        <Field l="Event Name *" v={f.event_name} onChange={v=>set('event_name',v)}/>
+        <Field l="Date Start *" v={f.date_start} type="date" onChange={v=>set('date_start',v)}/>
+        <Field l="Date End" v={f.date_end||''} type="date" onChange={v=>set('date_end',v)}/>
+        <Field l="Time" v={f.time_start} type="time" onChange={v=>set('time_start',v)}/>
+        <Field l="Category" v={f.category} type="select" opts={CATEGORIES} onChange={v=>set('category',v)}/>
+        <Field l="Venue" v={f.location_name} onChange={v=>set('location_name',v)}/>
+        <Field l="Address" v={f.address||''} onChange={v=>set('address',v)}/>
+        <Field l="Price" v={f.price} placeholder="Free or €XX" onChange={v=>set('price',v)}/>
+        <Field l="Organizer" v={f.organizer||''} onChange={v=>set('organizer',v)}/>
+        <Field l="Phone" v={f.phone||''} onChange={v=>set('phone',v)}/>
+        <Field l="Language" v={f.language||''} onChange={v=>set('language',v)}/>
+        <div style={S.fieldWrap}>
+          <span style={S.fieldLabel}>Sponsored</span>
+          <label style={S.toggle}><input type="checkbox" checked={f.is_sponsored} onChange={e=>set('is_sponsored',e.target.checked)}/> {f.is_sponsored?'Yes':'No'}</label>
+        </div>
+        <Field l="Description" v={f.description||''} type="textarea" onChange={v=>set('description',v)} full/>
+      </div>
+      <div style={S.formActions}>
+        <button style={S.cancelBtn} onClick={onCancel}>Cancel</button>
+        <button style={S.saveBtn} onClick={()=>onSave(f)} disabled={saving||!f.event_name||!f.date_start}>
+          {saving?'Saving…':'💾 Save Changes'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── ADD FORM ─── */
+function AddForm({onSubmit}){
+  const empty={event_name:'',date_start:'',date_end:'',time_start:'',location_name:'',address:'',category:'Community',organizer:'',price:'',description:'',language:'it',phone:'',is_sponsored:false};
+  const[f,setF]=useState(empty);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+
+  // For now, manual add isn't wired to API — show a message
+  return(
+    <div style={S.formWrap} className="fi">
+      <div style={S.formHeader}>
+        <h2 style={S.formTitle}>➕ Add Event Manually</h2>
+        <p style={S.formSub}>Fill in the details. The event will be created as "pending".</p>
+      </div>
+      <div style={S.formGrid}>
+        <Field l="Event Name *" v={f.event_name} onChange={v=>set('event_name',v)}/>
+        <Field l="Date Start *" v={f.date_start} type="date" onChange={v=>set('date_start',v)}/>
+        <Field l="Date End" v={f.date_end} type="date" onChange={v=>set('date_end',v)}/>
+        <Field l="Time" v={f.time_start} type="time" onChange={v=>set('time_start',v)}/>
+        <Field l="Category" v={f.category} type="select" opts={CATEGORIES} onChange={v=>set('category',v)}/>
+        <Field l="Venue" v={f.location_name} onChange={v=>set('location_name',v)}/>
+        <Field l="Address" v={f.address} onChange={v=>set('address',v)}/>
+        <Field l="Price" v={f.price} placeholder="Free or €XX" onChange={v=>set('price',v)}/>
+        <Field l="Organizer" v={f.organizer} onChange={v=>set('organizer',v)}/>
+        <Field l="Phone" v={f.phone} onChange={v=>set('phone',v)}/>
+        <Field l="Language" v={f.language} onChange={v=>set('language',v)}/>
+        <Field l="Description" v={f.description} type="textarea" onChange={v=>set('description',v)} full/>
+      </div>
+      <div style={S.formActions}>
+        <button style={S.saveBtn} disabled={!f.event_name||!f.date_start}
+          onClick={()=>{alert('Manual add will be wired in next iteration. For now, use Flowise or add directly in Airtable.');}}
+        >📤 Submit for Review</button>
+      </div>
+      <p style={S.formHint}>💡 Tip: For fastest input, upload a flyer screenshot through Flowise — AI will extract all the details automatically.</p>
+    </div>
+  );
+}
+
+/* ─── FIELD COMPONENT ─── */
+function Field({l,v,onChange,type='text',placeholder,opts,full}){
+  const base={...S.input};
+  if(type==='select'){
+    return <label style={{...S.fieldWrap,...(full?S.fieldFull:{})}}><span style={S.fieldLabel}>{l}</span>
+      <select style={base} value={v} onChange={e=>onChange(e.target.value)}>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>
+    </label>;
+  }
+  if(type==='textarea'){
+    return <label style={{...S.fieldWrap,...(full?S.fieldFull:{})}}><span style={S.fieldLabel}>{l}</span>
+      <textarea style={{...base,minHeight:80,resize:'vertical'}} value={v} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/>
+    </label>;
+  }
+  return <label style={{...S.fieldWrap,...(full?S.fieldFull:{})}}><span style={S.fieldLabel}>{l}</span>
+    <input style={base} type={type} value={v} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/>
+  </label>;
+}
+
+/* ─── STYLES ─── */
+const S={
+  root:{fontFamily:"'Nunito',sans-serif",background:"#FAF7F2",color:"#2D2A26",minHeight:"100vh",display:"flex",flexDirection:"column"},
+
+  // Login
+  loginWrap:{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:24},
+  loginCard:{background:"#fff",borderRadius:20,padding:"40px 36px",maxWidth:380,width:"100%",textAlign:"center",boxShadow:"0 4px 24px rgba(0,0,0,.08)",border:"1px solid #E8E4DD"},
+  loginLogo:{fontSize:28,fontFamily:"'Playfair Display',serif",marginBottom:8},
+  loginSub:{fontSize:14,color:"#8C8578",marginBottom:24},
+  loginInput:{width:"100%",padding:"14px 16px",borderRadius:12,border:"1px solid #E8E4DD",background:"#FAF7F2",fontSize:16,textAlign:"center",outline:"none",letterSpacing:2},
+  loginErr:{color:"#C62828",fontSize:13,fontWeight:600,marginTop:8},
+  loginBtn:{width:"100%",padding:"14px",borderRadius:12,background:"#2D2A26",color:"#fff",border:"none",fontSize:15,fontWeight:700,cursor:"pointer",marginTop:16,fontFamily:"'Nunito',sans-serif"},
+  loginLink:{display:"block",marginTop:20,fontSize:13,color:"#8C8578",textDecoration:"none"},
+
+  // Nav
+  nav:{background:"#fff",borderBottom:"1px solid #E8E4DD",padding:"12px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 8px rgba(0,0,0,.04)"},
+  navLeft:{},
+  navLogo:{fontSize:22,margin:0,display:"flex",alignItems:"center",gap:6},
+  navLogoTxt:{fontFamily:"'Playfair Display',serif",fontWeight:700},
+  navCenter:{display:"flex",gap:4},
+  navRight:{display:"flex",gap:8,alignItems:"center"},
+  tabBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"8px 16px",borderRadius:20,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:600,transition:"all .15s"},
+  tabActive:{background:"#2D2A26",color:"#fff",borderColor:"#2D2A26"},
+  badge:{background:"rgba(255,255,255,.2)",padding:"1px 7px",borderRadius:10,fontSize:11,marginLeft:4},
+  refreshBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"},
+  calLink:{fontSize:13,color:"#1976D2",textDecoration:"none",fontWeight:600},
+
+  toast:{padding:"10px 24px",fontSize:14,fontWeight:600,background:"#E8F5E9",color:"#2E7D32",textAlign:"center"},
+  loadBar:{padding:"8px 24px",fontSize:13,fontWeight:600,background:"#E3F2FD",color:"#1565C0",textAlign:"center",animation:"pulse 1.5s infinite"},
+
+  main:{flex:1,padding:"20px 24px",maxWidth:800,margin:"0 auto",width:"100%"},
+  empty:{textAlign:"center",padding:"60px 20px",color:"#8C8578"},
+
+  // Event cards
+  evCard:{background:"#fff",borderRadius:14,overflow:"hidden",marginBottom:12,display:"flex",border:"1px solid #E8E4DD",boxShadow:"0 1px 4px rgba(0,0,0,.04)"},
+  evAccent:{width:5,flexShrink:0},
+  evBody:{padding:"14px 18px",flex:1},
+  evTop:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:8},
+  evCat:{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:12,textTransform:"uppercase",letterSpacing:.3},
+  evStatus:{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:12},
+  evConf:{fontSize:11,color:"#8C8578"},
+  evName:{fontSize:17,fontWeight:700,color:"#2D2A26",margin:"0 0 8px",lineHeight:1.3},
+  evMeta:{display:"flex",flexWrap:"wrap",gap:12,fontSize:13,color:"#6B6560",marginBottom:6},
+  evDesc:{fontSize:13,color:"#8C8578",lineHeight:1.5,marginBottom:10,maxHeight:60,overflow:"hidden"},
+  evActions:{display:"flex",gap:8,flexWrap:"wrap"},
+  editBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"7px 16px",borderRadius:10,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:600},
+  approveBtn:{background:"#E8F5E9",border:"1px solid #A5D6A7",color:"#2E7D32",padding:"7px 16px",borderRadius:10,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:700},
+  rejectBtn:{background:"#FFEBEE",border:"1px solid #EF9A9A",color:"#C62828",padding:"7px 16px",borderRadius:10,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:600},
+
+  // Forms
+  formWrap:{background:"#fff",borderRadius:16,border:"1px solid #E8E4DD",padding:"24px",boxShadow:"0 2px 12px rgba(0,0,0,.04)"},
+  formHeader:{marginBottom:20},
+  formTitle:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,margin:"0 0 4px"},
+  formSub:{fontSize:13,color:"#8C8578"},
+  formGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 16px"},
+  fieldWrap:{display:"flex",flexDirection:"column",gap:4},
+  fieldFull:{gridColumn:"1 / -1"},
+  fieldLabel:{fontSize:11,color:"#8C8578",textTransform:"uppercase",letterSpacing:.8,fontWeight:700},
+  input:{background:"#FAF7F2",border:"1px solid #E8E4DD",color:"#2D2A26",padding:"10px 12px",borderRadius:10,fontSize:14,outline:"none",width:"100%"},
+  toggle:{display:"flex",alignItems:"center",gap:8,fontSize:14,color:"#2D2A26",marginTop:4},
+  formActions:{display:"flex",gap:10,marginTop:20,justifyContent:"flex-end"},
+  cancelBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"10px 24px",borderRadius:10,cursor:"pointer",fontSize:14,fontFamily:"'Nunito',sans-serif",fontWeight:600},
+  saveBtn:{background:"#2D2A26",color:"#fff",border:"none",padding:"10px 28px",borderRadius:10,cursor:"pointer",fontSize:14,fontFamily:"'Nunito',sans-serif",fontWeight:700},
+  backBtn:{background:"none",border:"none",color:"#1976D2",cursor:"pointer",fontSize:13,fontWeight:700,padding:"0 0 8px",fontFamily:"'Nunito',sans-serif"},
+  formHint:{fontSize:13,color:"#8C8578",marginTop:16,padding:"12px 16px",background:"#FAF7F2",borderRadius:10,lineHeight:1.5},
+
+  ft:{padding:"14px 24px",borderTop:"1px solid #E8E4DD",display:"flex",justifyContent:"space-between",fontSize:12,color:"#8C8578",background:"#fff"},
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
