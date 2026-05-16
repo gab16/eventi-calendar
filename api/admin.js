@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Password');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
@@ -105,6 +105,39 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, record: data });
     } catch (e) {
       return res.status(502).json({ error: 'Failed to update', detail: e.message });
+    }
+  }
+
+  // POST — create a new event
+  if (req.method === 'POST') {
+    try {
+      const { fields } = req.body;
+      if (!fields || !fields.event_name || !fields.date_start) {
+        return res.status(400).json({ error: 'Missing required fields (event_name, date_start)' });
+      }
+
+      const allowed = ['event_name','date_start','date_end','time_start','location_name','address',
+        'category','organizer','price','description','language','phone','status','is_sponsored'];
+      const safeFields = { status: 'pending' };
+      for (const key of allowed) {
+        if (key in fields) safeFields[key] = fields[key];
+      }
+
+      const resp = await fetch(airtableUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fields: safeFields }),
+      });
+
+      if (!resp.ok) {
+        const body = await resp.text();
+        return res.status(resp.status).json({ error: 'Airtable create failed', detail: body });
+      }
+
+      const data = await resp.json();
+      return res.status(201).json({ success: true, record: data });
+    } catch (e) {
+      return res.status(502).json({ error: 'Failed to create', detail: e.message });
     }
   }
 

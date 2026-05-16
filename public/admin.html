@@ -211,20 +211,17 @@ function App(){
         <AddForm onSubmit={async(fields)=>{
           setSaving('new');setMsg(null);
           try{
-            const r=await fetch(`https://api.airtable.com/v0/appjmCsXtF4V9wmmt/tblhaBmXjcrE8U8ku`,{
+            const r=await fetch(API,{
               method:'POST',
-              headers:{'Authorization':`Bearer ${pw}`,...headers,'Content-Type':'application/json'},
+              headers,
               body:JSON.stringify({fields:{...fields,status:'pending'}}),
             });
-            // Use admin proxy instead
-            // For now we add via the admin endpoint approach
-          }catch(e){}
-          // Actually let's use a proper approach - add via admin API
-          // We'll add a POST handler later, for now manual entry goes to Airtable directly
-          setMsg('✅ Event submitted for review');
+            if(!r.ok){const d=await r.json();throw new Error(d.error||'Failed');}
+            setMsg('✅ Event submitted for review');
+            setTab('pending');
+            await fetchEvents();
+          }catch(e){setMsg('❌ '+e.message)}
           setSaving(null);
-          setTab('pending');
-          await fetchEvents();
         }}/>
       )}
     </div>
@@ -303,7 +300,7 @@ function AddForm({onSubmit}){
       </div>
       <div style={S.formActions}>
         <button style={S.saveBtn} disabled={!f.event_name||!f.date_start}
-          onClick={()=>{alert('Manual add will be wired in next iteration. For now, use Flowise or add directly in Airtable.');}}
+          onClick={()=>{onSubmit(f);}}
         >📤 Submit for Review</button>
       </div>
       <p style={S.formHint}>💡 Tip: For fastest input, upload a flyer screenshot through Flowise — AI will extract all the details automatically.</p>
