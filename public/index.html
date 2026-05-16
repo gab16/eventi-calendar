@@ -102,13 +102,13 @@ function App(){
 
   const monthEvts = useMemo(()=>{
     return filtered.filter(e=>{
-      const s=new Date(e.date_start);
-      const end=e.date_end?new Date(e.date_end):s;
+      const s=new Date(e.date_start.slice(0,10));
+      const end=e.date_end?new Date(e.date_end.slice(0,10)):s;
       return s<=new Date(year,month+1,0)&&end>=new Date(year,month,1);
     }).sort((a,b)=>a.date_start.localeCompare(b.date_start));
   },[filtered,year,month]);
 
-  function onDate(ds){return filtered.filter(e=>{const end=e.date_end||e.date_start;return e.date_start<=ds&&ds<=end})}
+  function onDate(ds){return filtered.filter(e=>{const end=(e.date_end||e.date_start).slice(0,10);return e.date_start.slice(0,10)<=ds&&ds<=end})}
 
   const dim = daysInMonth(year,month);
   const fd = firstDow(year,month);
