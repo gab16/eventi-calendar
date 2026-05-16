@@ -5,18 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eventi — Community Event Calendar | TattiOnline</title>
 <meta name="description" content="Discover local events. Browse the calendar, filter by category, find things to do.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◉</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0B0B0F;color:#D8D8E0;font-family:'Libre Franklin',sans-serif;font-size:14px}
+html{font-size:15px}
+body{background:#FAF7F2;color:#2D2A26;font-family:'Nunito',sans-serif}
 #root{min-height:100vh;display:flex;flex-direction:column}
-.fi{animation:fi .3s ease}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:#0B0B0F}
-::-webkit-scrollbar-thumb{background:#2A2A3A;border-radius:3px}
+.fi{animation:fi .35s ease}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#D4CFC7;border-radius:3px}
+@media(max-width:768px){
+  html{font-size:14px}
+  .cal-layout{flex-direction:column !important}
+  .cal-grid-wrap{min-width:0 !important}
+  .side-panel{flex:1 !important;max-height:none !important;min-width:0 !important}
+  .filter-chips{gap:4px !important}
+  .chip-btn{padding:4px 10px !important;font-size:11px !important}
+  .cell-evt{font-size:10px !important}
+}
 </style>
 </head>
 <body>
@@ -29,56 +40,63 @@ body{background:#0B0B0F;color:#D8D8E0;font-family:'Libre Franklin',sans-serif;fo
 <script type="text/babel">
 const { useState, useMemo, useEffect, useCallback } = React;
 
-/* ═══════════ CONFIG ═══════════ */
 const API_URL = '/api/events';
-
-/* ═══════════ CONSTANTS ═══════════ */
-const CATEGORIES = ["All","Music","Food","Art","Sport","Community","Workshop","Market","Wellness","Culture","Theatre","Cinema","Festival"];
 const PRICE_FILTERS = ["All","Free","Paid"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const CAT_HUE = {Music:330,Food:30,Art:210,Sport:140,Community:270,Workshop:170,Market:45,Wellness:160,Culture:250,Theatre:290,Cinema:310,Festival:20,"Presentazione libro":230};
 
-/* ═══════════ HELPERS ═══════════ */
-function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
-function firstDow(y,m){const d=new Date(y,m,1).getDay();return d===0?6:d-1}
+const CAT_STYLE = {
+  Music:{bg:"#FDE8F0",fg:"#C2185B",icon:"🎵"},
+  Food:{bg:"#FFF3E0",fg:"#E65100",icon:"🍽"},
+  Art:{bg:"#E8EAF6",fg:"#283593",icon:"🎨"},
+  Sport:{bg:"#E8F5E9",fg:"#2E7D32",icon:"⚽"},
+  Community:{bg:"#F3E5F5",fg:"#6A1B9A",icon:"🤝"},
+  Workshop:{bg:"#E0F7FA",fg:"#00695C",icon:"🔧"},
+  Market:{bg:"#FFF8E1",fg:"#F57F17",icon:"🛍"},
+  Wellness:{bg:"#E8F5E9",fg:"#1B5E20",icon:"🧘"},
+  Culture:{bg:"#EDE7F6",fg:"#4527A0",icon:"📚"},
+  Theatre:{bg:"#FCE4EC",fg:"#880E4F",icon:"🎭"},
+  Cinema:{bg:"#EFEBE9",fg:"#4E342E",icon:"🎬"},
+  Festival:{bg:"#FFF3E0",fg:"#BF360C",icon:"🎪"},
+  "Presentazione libro":{bg:"#E8EAF6",fg:"#1A237E",icon:"📖"},
+};
+const DEF_CAT = {bg:"#F5F5F5",fg:"#616161",icon:"📌"};
+function gc(c){return CAT_STYLE[c]||DEF_CAT}
+function isFree(p){return !p||p.toLowerCase().includes('free')||p==='0'||p==='€0'||p.toLowerCase().includes('gratis')||p.toLowerCase().includes('gratuito')}
+function dim(y,m){return new Date(y,m+1,0).getDate()}
+function fdow(y,m){const d=new Date(y,m,1).getDay();return d===0?6:d-1}
 function fmt(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
-function isFree(p){return !p||p.toLowerCase().includes('free')||p==='0'||p==='€0'}
-function cc(cat,a=1){return `hsla(${CAT_HUE[cat]??220},65%,55%,${a})`}
-function cb(cat){return cc(cat,0.12)}
+function ds(s){return (s||'').slice(0,10)}
 
-/* ═══════════ MAIN APP ═══════════ */
 function App(){
-  const now = new Date();
-  const [events,setEvents] = useState([]);
-  const [loading,setLoading] = useState(true);
-  const [error,setError] = useState(null);
-  const [month,setMonth] = useState(now.getMonth());
-  const [year,setYear] = useState(now.getFullYear());
-  const [selDate,setSelDate] = useState(null);
-  const [selEvent,setSelEvent] = useState(null);
-  const [catF,setCatF] = useState("All");
-  const [priceF,setPriceF] = useState("All");
-  const [search,setSearch] = useState("");
+  const now=new Date();
+  const [events,setEvents]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [error,setError]=useState(null);
+  const [month,setMonth]=useState(now.getMonth());
+  const [year,setYear]=useState(now.getFullYear());
+  const [selDate,setSelDate]=useState(null);
+  const [selEvent,setSelEvent]=useState(null);
+  const [catF,setCatF]=useState("All");
+  const [priceF,setPriceF]=useState("All");
+  const [search,setSearch]=useState("");
+  const [view,setView]=useState("cal");
 
-  // Fetch events
-  const fetchEvents = useCallback(async()=>{
-    setLoading(true); setError(null);
+  const fetchEvents=useCallback(async()=>{
+    setLoading(true);setError(null);
     try{
-      const r = await fetch(API_URL);
-      if(!r.ok) throw new Error(`Server error ${r.status}`);
-      const d = await r.json();
-      if(d.error) throw new Error(d.error);
+      const r=await fetch(API_URL);
+      if(!r.ok)throw new Error(`Error ${r.status}`);
+      const d=await r.json();
+      if(d.error)throw new Error(d.error);
       setEvents(d.events||[]);
     }catch(e){
       setError(e.message);
-      // Fallback sample data for testing
       setEvents([
-        {id:"s1",event_name:"Jazz al Tramonto",date_start:"2026-05-18",time_start:"21:00",location_name:"Blue Note Milano",address:"Via Borsieri 37",category:"Music",organizer:"Blue Note",price:"€25",description:"Live jazz quartet with aperitivo included.",is_sponsored:false},
-        {id:"s2",event_name:"Street Food Festival",date_start:"2026-05-20",date_end:"2026-05-22",time_start:"11:00",location_name:"Darsena",address:"Piazza XXIV Maggio",category:"Food",organizer:"Milano Events",price:"Free",description:"Three days of international street food along the Navigli.",is_sponsored:true},
-        {id:"s3",event_name:"Mostra Contemporanea",date_start:"2026-05-16",time_start:"18:30",location_name:"Fondazione Prada",address:"Largo Isarco 2",category:"Art",organizer:"Prada Foundation",price:"€15",description:"Opening night of new contemporary exhibition.",is_sponsored:false},
-        {id:"s4",event_name:"Yoga al Parco",date_start:"2026-05-24",time_start:"08:00",location_name:"Parco Sempione",category:"Sport",organizer:"Milano Wellness",price:"Free",description:"Morning yoga session open to all levels.",is_sponsored:false},
-        {id:"s5",event_name:"Mercato Vintage",date_start:"2026-05-17",date_end:"2026-05-18",time_start:"10:00",location_name:"Fiera di Sinigaglia",category:"Market",organizer:"East Market",price:"Free",description:"Monthly vintage and second-hand market.",is_sponsored:true},
+        {id:"s1",event_name:"Jazz al Tramonto",date_start:"2026-05-18",time_start:"21:00",location_name:"Blue Note Milano",category:"Music",price:"€25",description:"Live jazz quartet.",is_sponsored:false},
+        {id:"s2",event_name:"Street Food Festival",date_start:"2026-05-20",date_end:"2026-05-22",time_start:"11:00",location_name:"Darsena",category:"Food",price:"Free",description:"International street food.",is_sponsored:true},
+        {id:"s3",event_name:"Yoga al Parco",date_start:"2026-05-24",time_start:"08:00",location_name:"Parco Sempione",category:"Sport",price:"Free",is_sponsored:false},
       ]);
     }
     setLoading(false);
@@ -86,246 +104,239 @@ function App(){
 
   useEffect(()=>{fetchEvents()},[fetchEvents]);
 
-  // Filters
-  const filtered = useMemo(()=>{
+  const categories=useMemo(()=>{
+    const c=new Set(events.map(e=>e.category).filter(Boolean));
+    return["All",...Array.from(c).sort()];
+  },[events]);
+
+  const filtered=useMemo(()=>{
     return events.filter(e=>{
-      if(catF!=="All"&&e.category!==catF) return false;
-      if(priceF==="Free"&&!isFree(e.price)) return false;
-      if(priceF==="Paid"&&isFree(e.price)) return false;
-      if(search){
-        const s=search.toLowerCase();
-        if(!e.event_name.toLowerCase().includes(s)&&!(e.location_name||'').toLowerCase().includes(s)&&!(e.organizer||'').toLowerCase().includes(s)) return false;
-      }
+      if(catF!=="All"&&e.category!==catF)return false;
+      if(priceF==="Free"&&!isFree(e.price))return false;
+      if(priceF==="Paid"&&isFree(e.price))return false;
+      if(search){const s=search.toLowerCase();if(!e.event_name.toLowerCase().includes(s)&&!(e.location_name||'').toLowerCase().includes(s)&&!(e.organizer||'').toLowerCase().includes(s))return false}
       return true;
     });
   },[events,catF,priceF,search]);
 
-  const monthEvts = useMemo(()=>{
+  const monthEvts=useMemo(()=>{
     return filtered.filter(e=>{
-      const s=new Date(e.date_start.slice(0,10));
-      const end=e.date_end?new Date(e.date_end.slice(0,10)):s;
-      return s<=new Date(year,month+1,0)&&end>=new Date(year,month,1);
+      const s=new Date(ds(e.date_start)+'T12:00:00');
+      const end=e.date_end?new Date(ds(e.date_end)+'T12:00:00'):s;
+      return s<=new Date(year,month+1,0,23,59)&&end>=new Date(year,month,1);
     }).sort((a,b)=>a.date_start.localeCompare(b.date_start));
   },[filtered,year,month]);
 
-  function onDate(ds){return filtered.filter(e=>{const end=(e.date_end||e.date_start).slice(0,10);return e.date_start.slice(0,10)<=ds&&ds<=end})}
+  function onDate(d){return filtered.filter(e=>{const s=ds(e.date_start),end=ds(e.date_end)||s;return s<=d&&d<=end})}
 
-  const dim = daysInMonth(year,month);
-  const fd = firstDow(year,month);
+  const nDays=dim(year,month),fd=fdow(year,month);
   const cells=[];
-  for(let i=0;i<fd;i++) cells.push(null);
-  for(let d=1;d<=dim;d++) cells.push(d);
+  for(let i=0;i<fd;i++)cells.push(null);
+  for(let d=1;d<=nDays;d++)cells.push(d);
+  while(cells.length%7)cells.push(null);
 
-  const todayStr = fmt(now.getFullYear(),now.getMonth(),now.getDate());
-  const selDateEvts = selDate ? onDate(selDate) : [];
+  const todayStr=fmt(now.getFullYear(),now.getMonth(),now.getDate());
 
-  function prevMonth(){if(month===0){setMonth(11);setYear(y=>y-1)}else setMonth(m=>m-1);setSelDate(null);setSelEvent(null)}
-  function nextMonth(){if(month===11){setMonth(0);setYear(y=>y+1)}else setMonth(m=>m+1);setSelDate(null);setSelEvent(null)}
+  function prev(){if(month===0){setMonth(11);setYear(y=>y-1)}else setMonth(m=>m-1);setSelDate(null);setSelEvent(null)}
+  function next(){if(month===11){setMonth(0);setYear(y=>y+1)}else setMonth(m=>m+1);setSelDate(null);setSelEvent(null)}
 
-  return (
-    <div style={S.root}>
-      {/* NAV */}
-      <nav style={S.nav}>
-        <h1 style={S.logo}><span style={S.lm}>◉</span> Eventi</h1>
-        <div style={S.navR}>
-          {loading && <span style={S.loadBadge}>Loading…</span>}
-          {error && <span style={S.errBadge} title={error}>⚠ Using sample data</span>}
-          {!loading && !error && <span style={S.okBadge}>● {events.length} events</span>}
+  return(
+  <div style={S.root}>
+    {/* HEADER */}
+    <header style={S.hdr}>
+      <div style={S.hdrTop}>
+        <div>
+          <h1 style={S.logo}>📅 <span style={S.logoTxt}>Eventi</span></h1>
+          <p style={S.tag}>Community Event Calendar</p>
         </div>
-      </nav>
-
-      {/* FILTERS */}
-      <div style={S.fBar}>
-        <input style={S.sInput} placeholder="Search events, venues, organizers…" value={search} onChange={e=>setSearch(e.target.value)}/>
-        <div style={S.chips}>
-          {CATEGORIES.map(c=>(
-            <button key={c} onClick={()=>setCatF(c)}
-              style={{...S.chip,...(catF===c?{background:c==="All"?"#fff":cc(c),color:c==="All"?"#1a1a1a":"#fff",borderColor:"transparent"}:{})}}>{c}</button>
-          ))}
-          <span style={S.div}>|</span>
-          {PRICE_FILTERS.map(p=>(
-            <button key={p} onClick={()=>setPriceF(p)}
-              style={{...S.chip,...(priceF===p?{background:"#fff",color:"#1a1a1a",borderColor:"transparent"}:{})}}>{p}</button>
-          ))}
+        <div style={S.hdrAct}>
+          <button style={{...S.vBtn,...(view==="cal"?S.vBtnA:{})}} onClick={()=>setView("cal")}>📅 Calendar</button>
+          <button style={{...S.vBtn,...(view==="list"?S.vBtnA:{})}} onClick={()=>setView("list")}>📋 List</button>
+          <button style={S.tBtn} onClick={()=>{setMonth(now.getMonth());setYear(now.getFullYear());setSelDate(todayStr);setSelEvent(null)}}>Today</button>
         </div>
       </div>
+      <div style={S.fRow}>
+        <div style={S.sWrap}><span style={S.sIco}>🔍</span><input style={S.sIn} placeholder="Search events, venues…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
+        <div className="filter-chips" style={S.chips}>
+          {categories.map(c=>{const cs=gc(c);const a=catF===c;return <button key={c} className="chip-btn" onClick={()=>setCatF(c)} style={{...S.chip,...(a?{background:c==="All"?"#2D2A26":cs.fg,color:"#fff",borderColor:"transparent"}:{})}}>{c!=="All"&&cs.icon?cs.icon+" ":""}{c}</button>})}
+          <span style={S.cdiv}>·</span>
+          {PRICE_FILTERS.map(p=><button key={p} className="chip-btn" onClick={()=>setPriceF(p)} style={{...S.chip,...(priceF===p?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{p==="Free"?"🆓 Free":p==="Paid"?"💶 Paid":p}</button>)}
+        </div>
+      </div>
+    </header>
 
-      {/* MAIN */}
-      <div style={S.main}>
-        {/* Calendar grid */}
-        <div style={S.calWrap}>
-          <div style={S.mNav}>
-            <button style={S.mBtn} onClick={prevMonth}>‹</button>
-            <h2 style={S.mLabel}>{MONTHS[month]} {year}</h2>
-            <button style={S.mBtn} onClick={nextMonth}>›</button>
-          </div>
-          <div style={S.grid}>
-            {DAYS.map(d=><div key={d} style={S.dHdr}>{d}</div>)}
+    {loading&&<div style={S.stat}>⏳ Loading events…</div>}
+    {error&&<div style={{...S.stat,background:"#FFF3E0",color:"#E65100"}}>⚠️ Using sample data</div>}
+
+    {/* CALENDAR */}
+    {view==="cal"&&<div style={S.mainA}>
+      <div style={S.mNav}><button style={S.arr} onClick={prev}>‹</button><h2 style={S.mLbl}>{MONTHS[month]} <span style={S.yLbl}>{year}</span></h2><button style={S.arr} onClick={next}>›</button></div>
+      <div className="cal-layout" style={S.calL}>
+        <div className="cal-grid-wrap" style={S.calGW}>
+          <div style={S.calG}>
+            {DAYS.map(d=><div key={d} style={S.dH}>{d}</div>)}
             {cells.map((day,i)=>{
-              if(!day) return <div key={'e'+i} style={S.empty}/>;
-              const ds=fmt(year,month,day);
-              const de=onDate(ds);
-              const isT=ds===todayStr, isS=ds===selDate;
+              if(!day)return <div key={'e'+i} style={S.eC}/>;
+              const d=fmt(year,month,day),de=onDate(d),isT=d===todayStr,isS=d===selDate,isW=((fd+day-1)%7)>=5;
               return(
-                <div key={day} style={{...S.cell,...(isT?S.cT:{}),...(isS?S.cS:{})}} onClick={()=>{setSelDate(ds);setSelEvent(null)}}>
-                  <span style={{...S.cN,...(isT?S.cNT:{})}}>{day}</span>
-                  {de.length>0&&<div style={S.dots}>{de.slice(0,4).map((ev,j)=><span key={j} style={{...S.dot,background:cc(ev.category)}}/>)}</div>}
-                  {de.some(e=>e.is_sponsored)&&<span style={S.star}>★</span>}
+                <div key={day} style={{...S.cl,...(isW?S.clW:{}),...(isT?S.clT:{}),...(isS?S.clS:{})}} onClick={()=>{setSelDate(d);setSelEvent(null)}}>
+                  <div style={S.clH}><span style={{...S.clN,...(isT?S.clNT:{})}}>{day}</span>{isT&&<span style={S.tBdg}>today</span>}</div>
+                  <div style={S.clEv}>
+                    {de.slice(0,3).map((ev,j)=>{const cs=gc(ev.category);return(
+                      <div key={ev.id+'_'+j} className="cell-evt" style={{...S.cEv,background:cs.bg,color:cs.fg,borderLeft:'3px solid '+cs.fg}} onClick={e=>{e.stopPropagation();setSelDate(d);setSelEvent(ev)}} title={ev.event_name}>
+                        <span style={S.cEvT}>{ev.event_name}</span>
+                      </div>
+                    )})}
+                    {de.length>3&&<div style={S.cMore}>+{de.length-3} more</div>}
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
-
-        {/* Side panel */}
-        <div style={S.side}>
-          {selEvent ? (
-            <Detail ev={selEvent} onBack={()=>setSelEvent(null)}/>
-          ) : selDate ? (
-            <div className="fi">
-              <h3 style={S.sTitle}>{new Date(selDate+'T00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</h3>
-              {selDateEvts.length===0
-                ? <p style={S.mu}>No events match your filters for this day.</p>
-                : selDateEvts.map(ev=><Card key={ev.id} ev={ev} onClick={()=>setSelEvent(ev)}/>)
-              }
-            </div>
-          ) : (
-            <div className="fi">
-              <h3 style={S.sTitle}>This Month</h3>
-              {monthEvts.length===0
-                ? <p style={S.mu}>No events match your filters.</p>
-                : monthEvts.map(ev=><Card key={ev.id} ev={ev} onClick={()=>setSelEvent(ev)}/>)
-              }
-            </div>
-          )}
+        <div className="side-panel" style={S.sP}>
+          {selEvent?<Detail ev={selEvent} onBack={()=>setSelEvent(null)}/>
+          :selDate?<div className="fi"><h3 style={S.sT}>{new Date(selDate+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>{onDate(selDate).length===0?<div style={S.emSt}><span style={{fontSize:40}}>📭</span><p>No events on this day</p></div>:onDate(selDate).map(ev=><Card key={ev.id} ev={ev} onClick={()=>setSelEvent(ev)}/>)}</div>
+          :<div className="fi"><h3 style={S.sT}>📋 Upcoming in {MONTHS[month]}</h3>{monthEvts.length===0?<div style={S.emSt}><span style={{fontSize:40}}>🗓</span><p>No events this month</p></div>:monthEvts.map(ev=><Card key={ev.id} ev={ev} onClick={()=>{setSelEvent(ev);setSelDate(ds(ev.date_start))}}/>)}</div>}
         </div>
       </div>
+    </div>}
 
-      {/* FOOTER */}
-      <footer style={S.foot}>
-        <span>tattionline.com</span>
-        <span style={{fontStyle:'italic'}}>Eventi — Community Event Calendar</span>
-      </footer>
-    </div>
-  );
+    {/* LIST */}
+    {view==="list"&&<div style={S.listA}>
+      <div style={S.mNav}><button style={S.arr} onClick={prev}>‹</button><h2 style={S.mLbl}>{MONTHS[month]} <span style={S.yLbl}>{year}</span></h2><button style={S.arr} onClick={next}>›</button></div>
+      {monthEvts.length===0?<div style={S.emSt}><span style={{fontSize:48}}>🗓</span><p style={{fontSize:16}}>No events match your filters</p></div>
+      :monthEvts.map(ev=><Card key={ev.id} ev={ev} wide onClick={()=>setSelEvent(ev)}/>)}
+      {selEvent&&<div style={S.ovl} onClick={()=>setSelEvent(null)}><div style={S.mdl} onClick={e=>e.stopPropagation()}><Detail ev={selEvent} onBack={()=>setSelEvent(null)}/></div></div>}
+    </div>}
+
+    <footer style={S.ft}><span>tattionline.com</span><span>{events.length} events</span></footer>
+  </div>);
 }
 
-/* ═══════════ CARD ═══════════ */
-function Card({ev,onClick}){
-  const d=new Date(ev.date_start+'T00:00');
+function Card({ev,onClick,wide}){
+  const cs=gc(ev.category);const d=new Date(ds(ev.date_start)+'T12:00:00');
+  const hasEnd=ev.date_end&&ds(ev.date_end)!==ds(ev.date_start);
   return(
-    <div style={{...S.card,borderLeftColor:cc(ev.category)}} onClick={onClick} className="fi">
-      {ev.is_sponsored&&<span style={S.spTag}>★ Sponsored</span>}
-      <div style={S.cardRow}>
-        <div style={S.cardD}><span style={S.cardDN}>{d.getDate()}</span><span style={S.cardDD}>{d.toLocaleDateString('en-GB',{weekday:'short'})}</span></div>
-        <div style={S.cardB}>
-          <h4 style={S.cardT}>{ev.event_name}</h4>
-          <p style={S.cardM}>{ev.time_start}{ev.location_name?' · '+ev.location_name:''}</p>
-          <div style={S.tags}>
-            <span style={{...S.catT,background:cb(ev.category),color:cc(ev.category)}}>{ev.category}</span>
-            <span style={{...S.prT,...(isFree(ev.price)?S.frT:S.pdT)}}>{ev.price||'Free'}</span>
-          </div>
+    <div style={{...S.card,...(wide?{maxWidth:'100%'}:{})}} onClick={onClick} className="fi">
+      <div style={{...S.cardAc,background:cs.fg}}/>
+      <div style={S.cardC}>
+        <div style={S.cardTop}>
+          <div style={{...S.catBdg,background:cs.bg,color:cs.fg}}>{cs.icon} {ev.category}</div>
+          {ev.is_sponsored&&<span style={S.spBdg}>⭐ Sponsored</span>}
+          {isFree(ev.price)&&<span style={S.frBdg}>Free</span>}
         </div>
+        <h4 style={S.cardNm}>{ev.event_name}</h4>
+        <div style={S.cardDt}>
+          <span style={S.cdl}>📅 {d.getDate()} {MONTHS_SHORT[d.getMonth()]}{hasEnd?' → '+ds(ev.date_end):''}</span>
+          {ev.time_start&&ev.time_start!=='00:00'&&<span style={S.cdl}>🕐 {ev.time_start}</span>}
+          {ev.location_name&&<span style={S.cdl}>📍 {ev.location_name}</span>}
+        </div>
+        {!isFree(ev.price)&&ev.price&&<div style={S.cardPr}>💶 {ev.price}</div>}
       </div>
     </div>
   );
 }
 
-/* ═══════════ DETAIL ═══════════ */
 function Detail({ev,onBack}){
+  const cs=gc(ev.category);const d=new Date(ds(ev.date_start)+'T12:00:00');
   return(
-    <div className="fi">
-      <button style={S.back} onClick={onBack}>← Back</button>
-      <div style={{...S.dHd,background:cb(ev.category),borderLeft:'4px solid '+cc(ev.category)}}>
-        <span style={{...S.dCat,color:cc(ev.category)}}>{ev.category}</span>
-        <h2 style={S.dName}>{ev.event_name}</h2>
-        {ev.is_sponsored&&<span style={S.spTag}>★ Sponsored</span>}
+    <div className="fi" style={{animation:'slideIn .3s ease'}}>
+      <button style={S.bk} onClick={onBack}>← Back</button>
+      <div style={{...S.dHero,background:`linear-gradient(135deg,${cs.bg},#fff)`}}>
+        <span style={{fontSize:48}}>{cs.icon}</span>
+        <div style={{...S.dCatB,background:cs.fg,color:'#fff'}}>{ev.category}</div>
+        <h2 style={S.dTtl}>{ev.event_name}</h2>
+        {ev.is_sponsored&&<span style={S.spBdg}>⭐ Sponsored</span>}
       </div>
-      <div style={S.dBody}>
-        <R i="📅" l="Date" v={ev.date_start+(ev.date_end&&ev.date_end!==ev.date_start?' → '+ev.date_end:'')}/>
-        {ev.time_start&&<R i="🕐" l="Time" v={ev.time_start}/>}
-        {ev.location_name&&<R i="📍" l="Venue" v={ev.location_name}/>}
-        {ev.address&&<R i="🗺" l="Address" v={ev.address}/>}
-        {ev.organizer&&<R i="👤" l="Organizer" v={ev.organizer}/>}
-        <R i="💶" l="Price" v={ev.price||'Free'}/>
-        {ev.language&&<R i="🌐" l="Language" v={ev.language}/>}
-        {ev.phone&&<R i="📞" l="Phone" v={ev.phone}/>}
-        {ev.description&&<p style={S.dDesc}>{ev.description}</p>}
+      <div style={S.dInfo}>
+        <IR i="📅" l="Date" v={d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+(ev.date_end&&ds(ev.date_end)!==ds(ev.date_start)?' → '+ds(ev.date_end):'')}/>
+        {ev.time_start&&ev.time_start!=='00:00'&&<IR i="🕐" l="Time" v={ev.time_start}/>}
+        {ev.location_name&&<IR i="📍" l="Venue" v={ev.location_name}/>}
+        {ev.address&&<IR i="🗺️" l="Address" v={ev.address}/>}
+        {ev.organizer&&<IR i="👤" l="Organizer" v={ev.organizer}/>}
+        <IR i="💶" l="Price" v={isFree(ev.price)?'Free!':ev.price}/>
+        {ev.language&&<IR i="🌐" l="Language" v={ev.language}/>}
+        {ev.phone&&<IR i="📞" l="Phone" v={ev.phone}/>}
       </div>
+      {ev.description&&<div style={S.dDesc}><p style={S.dDTxt}>{ev.description}</p></div>}
     </div>
   );
 }
-function R({i,l,v}){return <div style={S.dRow}><span style={S.rI}>{i}</span><span style={S.rL}>{l}</span><span style={S.rV}>{v}</span></div>}
+function IR({i,l,v}){return <div style={S.ir}><span style={S.irI}>{i}</span><span style={S.irL}>{l}</span><span style={S.irV}>{v}</span></div>}
 
-/* ═══════════ STYLES ═══════════ */
-const S = {
-  root:{fontFamily:"'Libre Franklin',sans-serif",background:"#0B0B0F",color:"#D8D8E0",minHeight:"100vh",display:"flex",flexDirection:"column"},
-  nav:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 24px",borderBottom:"1px solid #1C1C28",flexWrap:"wrap",gap:10},
-  logo:{fontFamily:"'Instrument Serif',serif",fontSize:26,fontWeight:400,margin:0,color:"#F0F0F5",letterSpacing:"-0.3px"},
-  lm:{color:"#E8594A",fontSize:16},
-  navR:{display:"flex",gap:8,alignItems:"center"},
-  loadBadge:{fontSize:12,color:"#E8A94A",animation:"pulse 1.5s infinite"},
-  errBadge:{fontSize:12,color:"#E8594A"},
-  okBadge:{fontSize:12,color:"hsl(140,50%,55%)"},
-
-  fBar:{padding:"14px 24px 0"},
-  sInput:{width:"100%",maxWidth:420,padding:"10px 14px",borderRadius:8,border:"1px solid #2A2A3A",background:"#12121A",color:"#D8D8E0",fontSize:14,fontFamily:"'Libre Franklin',sans-serif",marginBottom:10,outline:"none"},
-  chips:{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"},
-  chip:{background:"#16161F",border:"1px solid #2A2A3A",color:"#808098",padding:"5px 12px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Libre Franklin',sans-serif",fontWeight:500,transition:"all .15s"},
-  div:{color:"#2A2A3A",margin:"0 4px"},
-
-  main:{flex:1,padding:"16px 24px",display:"flex",gap:24,flexWrap:"wrap"},
-  calWrap:{flex:"1 1 440px",minWidth:0},
-  mNav:{display:"flex",alignItems:"center",justifyContent:"center",gap:20,marginBottom:14},
-  mBtn:{background:"none",border:"1px solid #2A2A3A",color:"#808098",width:32,height:32,borderRadius:"50%",cursor:"pointer",fontSize:18,fontFamily:"'Libre Franklin',sans-serif"},
-  mLabel:{fontFamily:"'Instrument Serif',serif",fontSize:22,fontWeight:400,color:"#F0F0F5",margin:0,minWidth:180,textAlign:"center"},
-
-  grid:{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2},
-  dHdr:{textAlign:"center",fontSize:11,color:"#505068",textTransform:"uppercase",letterSpacing:1,padding:"6px 0"},
-  empty:{aspectRatio:"1",minHeight:48},
-  cell:{background:"#111118",borderRadius:5,padding:5,aspectRatio:"1",minHeight:48,display:"flex",flexDirection:"column",cursor:"pointer",position:"relative",transition:"background .12s"},
-  cT:{background:"#18182A",boxShadow:"inset 0 0 0 1px #3A3A60"},
-  cS:{background:"#1A1A30",boxShadow:"inset 0 0 0 2px #5A5AFF"},
-  cN:{fontSize:12,fontWeight:500,color:"#707088"},
-  cNT:{color:"#E8594A",fontWeight:700},
-  dots:{display:"flex",gap:2,marginTop:"auto",flexWrap:"wrap"},
-  dot:{width:5,height:5,borderRadius:"50%"},
-  star:{position:"absolute",top:3,right:4,fontSize:8,color:"#E8A94A"},
-
-  side:{flex:"0 0 310px",minWidth:260,maxHeight:600,overflowY:"auto"},
-  sTitle:{fontFamily:"'Instrument Serif',serif",fontSize:18,color:"#F0F0F5",margin:"0 0 14px",fontWeight:400},
-  mu:{color:"#505068",fontSize:13,fontStyle:"italic"},
-
-  card:{background:"#13131B",borderRadius:10,padding:"12px 14px",marginBottom:8,cursor:"pointer",borderLeft:"3px solid",transition:"background .12s"},
-  cardRow:{display:"flex",gap:12},
-  cardD:{display:"flex",flexDirection:"column",alignItems:"center",minWidth:36},
-  cardDN:{fontSize:20,fontWeight:700,color:"#F0F0F5",lineHeight:1},
-  cardDD:{fontSize:10,color:"#606078",textTransform:"uppercase"},
-  cardB:{flex:1,minWidth:0},
-  cardT:{fontSize:14,fontWeight:600,color:"#E0E0E8",margin:"0 0 3px",lineHeight:1.3},
-  cardM:{fontSize:12,color:"#606078",margin:0},
-  tags:{display:"flex",gap:5,marginTop:5,flexWrap:"wrap"},
-  catT:{fontSize:10,padding:"2px 8px",borderRadius:10,fontWeight:600,textTransform:"uppercase",letterSpacing:.4},
-  prT:{fontSize:10,padding:"2px 8px",borderRadius:10},
-  frT:{background:"hsla(140,50%,40%,.12)",color:"hsl(140,50%,55%)"},
-  pdT:{background:"hsla(30,50%,40%,.12)",color:"hsl(30,60%,60%)"},
-  spTag:{fontSize:10,color:"#E8A94A",fontWeight:600,letterSpacing:.5},
-
-  back:{background:"none",border:"none",color:"#5A5AFF",cursor:"pointer",fontSize:13,padding:"0 0 10px",fontFamily:"'Libre Franklin',sans-serif"},
-  dHd:{borderRadius:"10px 10px 0 0",padding:"18px 16px 14px"},
-  dCat:{fontSize:11,textTransform:"uppercase",letterSpacing:1.5,fontWeight:600},
-  dName:{fontFamily:"'Instrument Serif',serif",fontSize:20,color:"#F0F0F5",margin:"6px 0 0",fontWeight:400},
-  dBody:{background:"#13131B",borderRadius:"0 0 10px 10px",padding:"14px 16px"},
-  dRow:{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:"1px solid #1A1A28",fontSize:13},
-  rI:{fontSize:14,width:20},
-  rL:{color:"#606078",width:68,flexShrink:0},
-  rV:{color:"#D8D8E0"},
-  dDesc:{fontSize:13,color:"#909098",lineHeight:1.6,marginTop:10},
-
-  foot:{padding:"12px 24px",borderTop:"1px solid #1C1C28",display:"flex",justifyContent:"space-between",fontSize:11,color:"#404058",marginTop:"auto"},
+const S={
+  root:{fontFamily:"'Nunito',sans-serif",background:"#FAF7F2",color:"#2D2A26",minHeight:"100vh",display:"flex",flexDirection:"column"},
+  hdr:{background:"#fff",borderBottom:"1px solid #E8E4DD",padding:"16px 24px 12px",position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 8px rgba(0,0,0,.04)"},
+  hdrTop:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12,marginBottom:12},
+  logo:{fontSize:28,margin:0,display:"flex",alignItems:"center",gap:8},
+  logoTxt:{fontFamily:"'Playfair Display',serif",fontWeight:700,color:"#2D2A26"},
+  tag:{fontSize:11,color:"#8C8578",letterSpacing:1.5,textTransform:"uppercase",marginTop:2},
+  hdrAct:{display:"flex",gap:6},
+  vBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"8px 16px",borderRadius:20,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:600,transition:"all .15s"},
+  vBtnA:{background:"#2D2A26",color:"#fff",borderColor:"#2D2A26"},
+  tBtn:{background:"#E8F5E9",border:"1px solid #A5D6A7",color:"#2E7D32",padding:"8px 16px",borderRadius:20,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:700},
+  fRow:{},
+  sWrap:{position:"relative",maxWidth:400,marginBottom:10},
+  sIco:{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,pointerEvents:"none"},
+  sIn:{width:"100%",padding:"10px 14px 10px 36px",borderRadius:12,border:"1px solid #E8E4DD",background:"#FAF7F2",color:"#2D2A26",fontSize:14,fontFamily:"'Nunito',sans-serif",outline:"none"},
+  chips:{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"},
+  chip:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"5px 14px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:600,transition:"all .15s",whiteSpace:"nowrap"},
+  cdiv:{color:"#D4CFC7",margin:"0 2px",fontSize:18},
+  stat:{padding:"8px 24px",fontSize:13,fontWeight:600,background:"#E3F2FD",color:"#1565C0",textAlign:"center"},
+  mainA:{flex:1,padding:"0 24px 24px"},
+  mNav:{display:"flex",alignItems:"center",justifyContent:"center",gap:20,padding:"16px 0"},
+  arr:{background:"#fff",border:"1px solid #E8E4DD",color:"#6B6560",width:40,height:40,borderRadius:"50%",cursor:"pointer",fontSize:22,fontFamily:"'Nunito',sans-serif",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 3px rgba(0,0,0,.06)"},
+  mLbl:{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"#2D2A26",margin:0},
+  yLbl:{fontWeight:600,color:"#8C8578"},
+  calL:{display:"flex",gap:24,alignItems:"flex-start",flexWrap:"wrap"},
+  calGW:{flex:"1 1 500px",minWidth:0},
+  calG:{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,background:"#E8E4DD",border:"1px solid #E8E4DD",borderRadius:16,overflow:"hidden"},
+  dH:{background:"#2D2A26",color:"#fff",textAlign:"center",fontSize:12,fontWeight:700,padding:"10px 0",textTransform:"uppercase",letterSpacing:.5},
+  eC:{background:"#F5F1EC",minHeight:90,padding:6},
+  cl:{background:"#fff",minHeight:90,padding:6,cursor:"pointer",transition:"background .12s",position:"relative"},
+  clW:{background:"#FDFBF8"},
+  clT:{background:"#FFFDE7",boxShadow:"inset 0 0 0 2px #FBC02D"},
+  clS:{background:"#E3F2FD",boxShadow:"inset 0 0 0 2px #1976D2"},
+  clH:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3},
+  clN:{fontSize:14,fontWeight:700,color:"#6B6560"},
+  clNT:{color:"#F57F17",fontSize:16},
+  tBdg:{fontSize:9,background:"#FBC02D",color:"#fff",padding:"1px 6px",borderRadius:8,fontWeight:700,textTransform:"uppercase"},
+  clEv:{display:"flex",flexDirection:"column",gap:2},
+  cEv:{padding:"2px 5px",borderRadius:4,fontSize:11,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer"},
+  cEvT:{overflow:"hidden",textOverflow:"ellipsis"},
+  cMore:{fontSize:10,color:"#8C8578",fontWeight:600,paddingLeft:4},
+  sP:{flex:"0 0 340px",minWidth:280,maxHeight:600,overflowY:"auto",background:"#fff",borderRadius:16,border:"1px solid #E8E4DD",padding:20,boxShadow:"0 2px 12px rgba(0,0,0,.04)"},
+  sT:{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:"#2D2A26",margin:"0 0 16px",lineHeight:1.3},
+  emSt:{textAlign:"center",padding:"32px 16px",color:"#8C8578"},
+  card:{background:"#fff",borderRadius:14,overflow:"hidden",marginBottom:10,cursor:"pointer",display:"flex",border:"1px solid #E8E4DD",transition:"box-shadow .15s",boxShadow:"0 1px 4px rgba(0,0,0,.04)"},
+  cardAc:{width:5,flexShrink:0},
+  cardC:{padding:"12px 14px",flex:1,minWidth:0},
+  cardTop:{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap",marginBottom:6},
+  catBdg:{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:12,textTransform:"uppercase",letterSpacing:.3,whiteSpace:"nowrap"},
+  spBdg:{fontSize:10,fontWeight:700,color:"#F57F17",letterSpacing:.3},
+  frBdg:{fontSize:10,fontWeight:700,color:"#2E7D32",background:"#E8F5E9",padding:"2px 8px",borderRadius:10},
+  cardNm:{fontSize:15,fontWeight:700,color:"#2D2A26",margin:"0 0 6px",lineHeight:1.3},
+  cardDt:{display:"flex",flexDirection:"column",gap:2},
+  cdl:{fontSize:12,color:"#6B6560"},
+  cardPr:{fontSize:12,color:"#BF360C",fontWeight:600,marginTop:4},
+  bk:{background:"none",border:"none",color:"#1976D2",cursor:"pointer",fontSize:13,fontWeight:700,padding:"0 0 12px",fontFamily:"'Nunito',sans-serif"},
+  dHero:{borderRadius:14,padding:"24px 20px",marginBottom:16},
+  dCatB:{display:"inline-block",fontSize:12,fontWeight:700,padding:"4px 14px",borderRadius:20,marginTop:10,textTransform:"uppercase",letterSpacing:.5},
+  dTtl:{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:"#2D2A26",marginTop:10,lineHeight:1.3},
+  dInfo:{borderRadius:14,border:"1px solid #E8E4DD",overflow:"hidden",marginBottom:12},
+  ir:{display:"flex",alignItems:"center",gap:10,padding:"10px 16px",borderBottom:"1px solid #F5F1EC",fontSize:14},
+  irI:{fontSize:16,width:24,textAlign:"center"},
+  irL:{color:"#8C8578",width:80,fontWeight:600,flexShrink:0},
+  irV:{color:"#2D2A26",fontWeight:500},
+  dDesc:{background:"#FAF7F2",borderRadius:14,padding:"16px 20px"},
+  dDTxt:{fontSize:14,lineHeight:1.7,color:"#4A4640",margin:0},
+  listA:{flex:1,padding:"0 24px 24px",maxWidth:800,margin:"0 auto",width:"100%"},
+  ovl:{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20},
+  mdl:{background:"#fff",borderRadius:20,maxWidth:480,width:"100%",maxHeight:"80vh",overflowY:"auto",padding:24},
+  ft:{padding:"14px 24px",borderTop:"1px solid #E8E4DD",display:"flex",justifyContent:"space-between",fontSize:12,color:"#8C8578",background:"#fff"},
 };
 
-/* ═══════════ RENDER ═══════════ */
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
