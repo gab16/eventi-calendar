@@ -120,8 +120,14 @@ export default async function handler(req, res) {
         'category','organizer','price','description','language','phone','status','is_sponsored'];
       const safeFields = { status: 'pending' };
       for (const key of allowed) {
-        if (key in fields) safeFields[key] = fields[key];
+        if (key in fields && fields[key] !== '' && fields[key] !== null && fields[key] !== undefined) {
+          safeFields[key] = fields[key];
+        }
       }
+
+      // Normalize dates to YYYY-MM-DD
+      if (safeFields.date_start) safeFields.date_start = new Date(safeFields.date_start).toISOString().slice(0, 10);
+      if (safeFields.date_end) safeFields.date_end = new Date(safeFields.date_end).toISOString().slice(0, 10);
 
       const resp = await fetch(airtableUrl, {
         method: 'POST',
