@@ -216,7 +216,7 @@ function App(){
               headers,
               body:JSON.stringify({fields:{...fields,status:'pending'}}),
             });
-            if(!r.ok){const d=await r.json();throw new Error(d.error||'Failed');}
+            if(!r.ok){const d=await r.json();throw new Error(d.detail||d.error||'Failed');}
             setMsg('✅ Event submitted for review');
             setTab('pending');
             await fetchEvents();
