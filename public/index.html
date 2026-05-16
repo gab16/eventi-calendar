@@ -33,11 +33,11 @@ const { useState, useMemo, useEffect, useCallback } = React;
 const API_URL = '/api/events';
 
 /* ═══════════ CONSTANTS ═══════════ */
-const CATEGORIES = ["All","Music","Food","Art","Sport","Community","Workshop","Market"];
+const CATEGORIES = ["All","Music","Food","Art","Sport","Community","Workshop","Market","Wellness","Culture","Theatre","Cinema","Festival"];
 const PRICE_FILTERS = ["All","Free","Paid"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const CAT_HUE = {Music:330,Food:30,Art:210,Sport:140,Community:270,Workshop:170,Market:45};
+const CAT_HUE = {Music:330,Food:30,Art:210,Sport:140,Community:270,Workshop:170,Market:45,Wellness:160,Culture:250,Theatre:290,Cinema:310,Festival:20,"Presentazione libro":230};
 
 /* ═══════════ HELPERS ═══════════ */
 function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}

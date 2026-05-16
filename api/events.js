@@ -33,8 +33,8 @@ export default async function handler(req, res) {
       return {
         id: rec.id,
         event_name: f.event_name || '',
-        date_start: f.date_start || '',
-        date_end: f.date_end || null,
+        date_start: (f.date_start || '').slice(0, 10),
+        date_end: f.date_end ? f.date_end.slice(0, 10) : null,
         time_start: f.time_start || '',
         location_name: f.location_name || '',
         address: f.address || '',
