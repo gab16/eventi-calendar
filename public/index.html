@@ -31,16 +31,13 @@ img{max-width:100%;display:block}
   .hdr-act{width:100%;justify-content:space-between !important}
   .month-label{font-size:20px !important}
   .card-img{height:120px !important}
-  .cal-cell{min-height:70px !important;padding:4px 3px !important}
-  .cell-num{font-size:12px !important;font-weight:700 !important}
-  .day-hdr{font-size:9px !important;padding:7px 2px !important;letter-spacing:0 !important}
+  .cal-cell{width:calc((100vw - 42px) / 7) !important;min-height:calc((100vw - 42px) / 7) !important;padding:3px !important}
+  .cell-num{font-size:11px !important;font-weight:700 !important}
+  .day-hdr{font-size:9px !important;padding:6px 0 !important;letter-spacing:0 !important}
   .cell-evt{display:none !important}
-  .cell-dots-mobile{display:flex !important}
+  .cell-dots-mobile{display:flex !important;gap:2px !important;flex-wrap:wrap !important}
   .today-bdg{display:none !important}
-}
-@media(max-width:380px){
-  .cal-cell{min-height:56px !important}
-  .day-hdr{font-size:8px !important}
+  .main-area{padding:0 8px 16px !important}
 }
 </style>
 </head>
@@ -218,7 +215,7 @@ function App(){
     {error&&<div style={{...S.stat,background:"#FFF3E0",color:"#E65100"}}>⚠️ {t.sampleData}</div>}
 
     {/* CALENDAR */}
-    {view==="cal"&&<div style={S.mainA}>
+    {view==="cal"&&<div className="main-area" style={S.mainA}>
       <div style={S.mNav}><button style={S.arr} onClick={prev}>‹</button><h2 className="month-label" style={S.mLbl}>{t.months[month]} <span style={S.yLbl}>{year}</span></h2><button style={S.arr} onClick={next}>›</button></div>
       <div className="cal-layout" style={S.calL}>
         <div className="cal-grid-wrap" style={S.calGW}>
