@@ -211,7 +211,7 @@ function App(){
 
       {/* ADD EVENT */}
       {tab==='add'&&(
-        <AddForm onSubmit={async(fields)=>{
+        <AddForm pw={pw} onSubmit={async(fields,imgData)=>{
           setSaving('new');setMsg(null);
           try{
             const r=await fetch(API,{
@@ -220,7 +220,19 @@ function App(){
               body:JSON.stringify({fields:{...fields,status:'pending'}}),
             });
             if(!r.ok){const d=await r.json();throw new Error(d.detail||d.error||'Failed');}
-            setMsg('✅ Event submitted for review');
+            const result=await r.json();
+            // Upload image if provided
+            if(imgData&&result.record?.id){
+              const upResp=await fetch('/api/upload',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','X-Admin-Password':pw},
+                body:JSON.stringify({recordId:result.record.id,...imgData}),
+              });
+              if(!upResp.ok) setMsg('✅ Event added but image upload failed');
+              else setMsg('✅ Event with image submitted for review');
+            } else {
+              setMsg('✅ Event submitted for review');
+            }
             setTab('pending');
             await fetchEvents();
           }catch(e){setMsg('❌ '+e.message)}
@@ -340,17 +352,54 @@ function EditForm({event,pw,onSave,onCancel,saving}){
 }
 
 /* ─── ADD FORM ─── */
-function AddForm({onSubmit}){
+function AddForm({onSubmit,pw}){
   const empty={event_name:'',date_start:'',date_end:'',time_start:'',location_name:'',address:'',category:'Community',organizer:'',price:'',description:'',language:'it',phone:'',is_sponsored:false};
   const[f,setF]=useState(empty);
+  const[imgPreview,setImgPreview]=useState(null);
+  const[imgData,setImgData]=useState(null);
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
 
-  // For now, manual add isn't wired to API — show a message
+  function handleImage(e){
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const img=new Image();
+      img.onload=function(){
+        const canvas=document.createElement('canvas');
+        const MAX=800;let w=img.width,h=img.height;
+        if(w>MAX){h=h*(MAX/w);w=MAX}
+        if(h>MAX){w=w*(MAX/h);h=MAX}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const compressed=canvas.toDataURL('image/jpeg',0.75);
+        setImgPreview(compressed);
+        setImgData({base64:compressed.split(',')[1],contentType:'image/jpeg',filename:file.name.replace(/\.[^.]+$/,'.jpg')});
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
   return(
     <div style={S.formWrap} className="fi">
       <div style={S.formHeader}>
         <h2 style={S.formTitle}>➕ Add Event Manually</h2>
         <p style={S.formSub}>Fill in the details. The event will be created as "pending".</p>
+      </div>
+      {/* Image upload */}
+      <div style={S.imgSection}>
+        <span style={S.fieldLabel}>Flyer Image</span>
+        <div style={S.imgRow}>
+          {imgPreview&&<img src={imgPreview} alt="Flyer" style={S.imgThumb}/>}
+          <div style={S.imgUpload}>
+            <label style={S.imgBtn}>
+              📸 {imgPreview?'Change image':'Upload flyer'}
+              <input type="file" accept="image/*" onChange={handleImage} style={{display:'none'}}/>
+            </label>
+            {imgData&&<span style={S.imgReady}>✅ Ready to upload</span>}
+          </div>
+        </div>
       </div>
       <div style={S.formGrid}>
         <Field l="Event Name *" v={f.event_name} onChange={v=>set('event_name',v)}/>
@@ -368,7 +417,7 @@ function AddForm({onSubmit}){
       </div>
       <div style={S.formActions}>
         <button style={S.saveBtn} disabled={!f.event_name||!f.date_start}
-          onClick={()=>{onSubmit(f);}}
+          onClick={()=>onSubmit(f,imgData)}
         >📤 Submit for Review</button>
       </div>
       <p style={S.formHint}>💡 Tip: For fastest input, upload a flyer screenshot through Flowise — AI will extract all the details automatically.</p>
