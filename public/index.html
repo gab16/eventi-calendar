@@ -181,6 +181,9 @@ function App(){
 
   const dateFmt=lang==='it'?'it-IT':'en-GB';
 
+  const[filterOpen,setFilterOpen]=useState(false);
+  const activeFilters=(catF!=="All"?1:0)+(priceF!=="All"?1:0);
+
   return(
   <div style={S.root}>
     {/* HEADER */}
@@ -199,15 +202,36 @@ function App(){
           </button>
         </div>
       </div>
+      {/* Search + Filter button */}
       <div style={S.fRow}>
-        <div style={S.sWrap}><span style={S.sIco}>🔍</span><input style={S.sIn} placeholder={t.search} value={search} onChange={e=>setSearch(e.target.value)}/></div>
-        <div className="filter-chips" style={S.chips}>
-          {categories.map(c=>{const cs=gc(c);const a=catF===c;return <button key={c} className="chip-btn" onClick={()=>setCatF(c)} style={{...S.chip,...(a?{background:c==="All"?"#2D2A26":cs.fg,color:"#fff",borderColor:"transparent"}:{})}}>{c!=="All"&&cs.icon?cs.icon+" ":""}{c==="All"?t.all:c}</button>})}
-          <span style={S.cdiv}>·</span>
-          <button className="chip-btn" onClick={()=>setPriceF("All")} style={{...S.chip,...(priceF==="All"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{t.all}</button>
-          <button className="chip-btn" onClick={()=>setPriceF("Free")} style={{...S.chip,...(priceF==="Free"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{lang==='it'?'🆓 Gratis':'🆓 Free'}</button>
-          <button className="chip-btn" onClick={()=>setPriceF("Paid")} style={{...S.chip,...(priceF==="Paid"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{lang==='it'?'💶 A pagamento':'💶 Paid'}</button>
+        <div style={S.searchRow}>
+          <div style={S.sWrap}><span style={S.sIco}>🔍</span><input style={S.sIn} placeholder={t.search} value={search} onChange={e=>setSearch(e.target.value)}/></div>
+          <button style={{...S.filterBtn,...(filterOpen||activeFilters>0?S.filterBtnActive:{})}} onClick={()=>setFilterOpen(o=>!o)}>
+            ☰ {lang==='it'?'Filtri':'Filters'}{activeFilters>0?` (${activeFilters})`:''}
+          </button>
         </div>
+        {/* Filter dropdown */}
+        {filterOpen&&(
+          <div style={S.filterDropdown}>
+            <div style={S.filterSection}>
+              <p style={S.filterSectionLabel}>{lang==='it'?'Categoria':'Category'}</p>
+              <div style={S.filterChipsWrap}>
+                {categories.map(c=>{const cs=gc(c);const a=catF===c;return(
+                  <button key={c} onClick={()=>{setCatF(c);}} style={{...S.chip,...(a?{background:c==="All"?"#2D2A26":cs.fg,color:"#fff",borderColor:"transparent"}:{})}}>{c!=="All"&&cs.icon?cs.icon+" ":""}{c==="All"?t.all:c}</button>
+                )})}
+              </div>
+            </div>
+            <div style={S.filterSection}>
+              <p style={S.filterSectionLabel}>{lang==='it'?'Prezzo':'Price'}</p>
+              <div style={S.filterChipsWrap}>
+                <button onClick={()=>setPriceF("All")} style={{...S.chip,...(priceF==="All"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{t.all}</button>
+                <button onClick={()=>setPriceF("Free")} style={{...S.chip,...(priceF==="Free"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{lang==='it'?'🆓 Gratis':'🆓 Free'}</button>
+                <button onClick={()=>setPriceF("Paid")} style={{...S.chip,...(priceF==="Paid"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{lang==='it'?'💶 A pagamento':'💶 Paid'}</button>
+              </div>
+            </div>
+            <button style={S.filterClose} onClick={()=>setFilterOpen(false)}>{lang==='it'?'Chiudi ✕':'Close ✕'}</button>
+          </div>
+        )}
       </div>
     </header>
 
@@ -337,6 +361,14 @@ const S={
   tBtn:{background:"#E8F5E9",border:"1px solid #A5D6A7",color:"#2E7D32",padding:"7px 14px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:700},
   langBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:700,transition:"all .15s"},
   fRow:{},
+  searchRow:{display:"flex",gap:8,alignItems:"center"},
+  filterBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"9px 14px",borderRadius:12,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:700,whiteSpace:"nowrap",flexShrink:0},
+  filterBtnActive:{background:"#2D2A26",color:"#fff",borderColor:"#2D2A26"},
+  filterDropdown:{background:"#fff",border:"1px solid #E8E4DD",borderRadius:14,padding:"16px",marginTop:8,boxShadow:"0 4px 20px rgba(0,0,0,.08)"},
+  filterSection:{marginBottom:14},
+  filterSectionLabel:{fontSize:11,fontWeight:700,color:"#8C8578",textTransform:"uppercase",letterSpacing:.8,marginBottom:8},
+  filterChipsWrap:{display:"flex",gap:6,flexWrap:"wrap"},
+  filterClose:{width:"100%",padding:"10px",borderRadius:10,background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:700,marginTop:4},
   sWrap:{position:"relative",maxWidth:400,marginBottom:8},
   sIco:{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,pointerEvents:"none"},
   sIn:{width:"100%",padding:"9px 14px 9px 36px",borderRadius:12,border:"1px solid #E8E4DD",background:"#FAF7F2",color:"#2D2A26",fontSize:14,fontFamily:"'Nunito',sans-serif",outline:"none"},
