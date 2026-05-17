@@ -65,6 +65,8 @@ export default async function handler(req, res) {
           confidence: f.confidence || '',
           status: f.status || 'pending',
           is_sponsored: !!f.is_sponsored,
+          flyer_image: f.flyer_image && f.flyer_image[0] ? f.flyer_image[0].url : null,
+          flyer_thumb: f.flyer_image && f.flyer_image[0] && f.flyer_image[0].thumbnails ? f.flyer_image[0].thumbnails.large.url : null,
         };
       });
 

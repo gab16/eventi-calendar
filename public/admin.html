@@ -26,7 +26,7 @@ input,select,textarea{font-family:'Nunito',sans-serif}
 const{useState,useEffect,useCallback}=React;
 
 const API='/api/admin';
-const CATEGORIES=["Music","Food","Art","Sport","Community","Workshop","Market","Wellness","Culture","Theatre","Cinema","Festival","Presentazione libro"];
+const CATEGORIES=["Music","Food","Art","Sport","Community","Workshop","Market","Wellness","Culture","Theatre","Cinema","Festival","Ambiente","Environment","Presentazione libro"];
 
 const CAT_STYLE={
   Music:{bg:"#FDE8F0",fg:"#C2185B",icon:"🎵"},Food:{bg:"#FFF3E0",fg:"#E65100",icon:"🍽"},
@@ -36,6 +36,8 @@ const CAT_STYLE={
   Culture:{bg:"#EDE7F6",fg:"#4527A0",icon:"📚"},Theatre:{bg:"#FCE4EC",fg:"#880E4F",icon:"🎭"},
   Cinema:{bg:"#EFEBE9",fg:"#4E342E",icon:"🎬"},Festival:{bg:"#FFF3E0",fg:"#BF360C",icon:"🎪"},
   "Presentazione libro":{bg:"#E8EAF6",fg:"#1A237E",icon:"📖"},
+  Ambiente:{bg:"#E8F5E9",fg:"#33691E",icon:"🌿"},
+  Environment:{bg:"#E8F5E9",fg:"#33691E",icon:"🌿"},
 };
 const DEF={bg:"#F5F5F5",fg:"#616161",icon:"📌"};
 function gc(c){return CAT_STYLE[c]||DEF}
@@ -59,6 +61,7 @@ function App(){
   const[msg,setMsg]=useState(null);
 
   const headers={'X-Admin-Password':pw,'Content-Type':'application/json'};
+  const pwRef=pw; // for child components
 
   const fetchEvents=useCallback(async()=>{
     setLoading(true);setError(null);
@@ -167,7 +170,7 @@ function App(){
               <p style={{fontSize:16,marginTop:12}}>{tab==='pending'?'No events awaiting review!':'No events found'}</p>
             </div>
           ):editing?(
-            <EditForm event={editing} onSave={async(fields)=>{await updateEvent(editing.id,fields);setEditing(null)}} onCancel={()=>setEditing(null)} saving={saving===editing.id}/>
+            <EditForm event={editing} pw={pw} onSave={async(fields)=>{await updateEvent(editing.id,fields);setEditing(null)}} onCancel={()=>setEditing(null)} saving={saving===editing.id}/>
           ):(
             shown.map(ev=>{
               const cs=gc(ev.category);
@@ -234,14 +237,79 @@ function App(){
 }
 
 /* ─── EDIT FORM ─── */
-function EditForm({event,onSave,onCancel,saving}){
+function EditForm({event,pw,onSave,onCancel,saving}){
   const[f,setF]=useState({...event});
+  const[imgPreview,setImgPreview]=useState(event.flyer_thumb||event.flyer_image||null);
+  const[imgData,setImgData]=useState(null); // {base64, contentType, filename}
+  const[uploading,setUploading]=useState(false);
+  const[uploadMsg,setUploadMsg]=useState(null);
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
+
+  function handleImage(e){
+    const file=e.target.files[0];
+    if(!file)return;
+    // Compress image client-side
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const img=new Image();
+      img.onload=function(){
+        const canvas=document.createElement('canvas');
+        const MAX=800;
+        let w=img.width,h=img.height;
+        if(w>MAX){h=h*(MAX/w);w=MAX}
+        if(h>MAX){w=w*(MAX/h);h=MAX}
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        const compressed=canvas.toDataURL('image/jpeg',0.75);
+        const base64=compressed.split(',')[1];
+        setImgPreview(compressed);
+        setImgData({base64,contentType:'image/jpeg',filename:file.name.replace(/\.[^.]+$/,'.jpg')});
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSave(){
+    // First save the fields
+    await onSave(f);
+    // Then upload image if new one was selected
+    if(imgData&&event.id){
+      setUploading(true);setUploadMsg(null);
+      try{
+        const r=await fetch('/api/upload',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','X-Admin-Password':pw},
+          body:JSON.stringify({recordId:event.id,...imgData}),
+        });
+        if(!r.ok){const d=await r.json();throw new Error(d.detail||d.error||'Upload failed')}
+        setUploadMsg('✅ Image uploaded');
+      }catch(e){setUploadMsg('❌ Image: '+e.message)}
+      setUploading(false);
+    }
+  }
+
   return(
     <div style={S.formWrap} className="fi">
       <div style={S.formHeader}>
         <button style={S.backBtn} onClick={onCancel}>← Cancel</button>
         <h2 style={S.formTitle}>Edit Event</h2>
+      </div>
+      {/* Image upload */}
+      <div style={S.imgSection}>
+        <span style={S.fieldLabel}>Flyer Image</span>
+        <div style={S.imgRow}>
+          {imgPreview&&<img src={imgPreview} alt="Flyer" style={S.imgThumb}/>}
+          <div style={S.imgUpload}>
+            <label style={S.imgBtn}>
+              📸 {imgPreview?'Change image':'Upload flyer'}
+              <input type="file" accept="image/*" onChange={handleImage} style={{display:'none'}}/>
+            </label>
+            {imgData&&<span style={S.imgReady}>✅ Ready to upload</span>}
+            {uploadMsg&&<span style={{fontSize:12}}>{uploadMsg}</span>}
+          </div>
+        </div>
       </div>
       <div style={S.formGrid}>
         <Field l="Event Name *" v={f.event_name} onChange={v=>set('event_name',v)}/>
@@ -263,8 +331,8 @@ function EditForm({event,onSave,onCancel,saving}){
       </div>
       <div style={S.formActions}>
         <button style={S.cancelBtn} onClick={onCancel}>Cancel</button>
-        <button style={S.saveBtn} onClick={()=>onSave(f)} disabled={saving||!f.event_name||!f.date_start}>
-          {saving?'Saving…':'💾 Save Changes'}
+        <button style={S.saveBtn} onClick={handleSave} disabled={saving||uploading||!f.event_name||!f.date_start}>
+          {uploading?'Uploading image…':saving?'Saving…':'💾 Save Changes'}
         </button>
       </div>
     </div>
@@ -391,6 +459,14 @@ const S={
   saveBtn:{background:"#2D2A26",color:"#fff",border:"none",padding:"10px 28px",borderRadius:10,cursor:"pointer",fontSize:14,fontFamily:"'Nunito',sans-serif",fontWeight:700},
   backBtn:{background:"none",border:"none",color:"#1976D2",cursor:"pointer",fontSize:13,fontWeight:700,padding:"0 0 8px",fontFamily:"'Nunito',sans-serif"},
   formHint:{fontSize:13,color:"#8C8578",marginTop:16,padding:"12px 16px",background:"#FAF7F2",borderRadius:10,lineHeight:1.5},
+
+  // Image upload
+  imgSection:{marginBottom:16},
+  imgRow:{display:"flex",gap:16,alignItems:"flex-start",marginTop:8},
+  imgThumb:{width:120,height:120,objectFit:"cover",borderRadius:10,border:"1px solid #E8E4DD"},
+  imgUpload:{display:"flex",flexDirection:"column",gap:8},
+  imgBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"10px 20px",borderRadius:10,cursor:"pointer",fontSize:13,fontWeight:600,display:"inline-block",textAlign:"center"},
+  imgReady:{fontSize:12,color:"#2E7D32",fontWeight:600},
 
   ft:{padding:"14px 24px",borderTop:"1px solid #E8E4DD",display:"flex",justifyContent:"space-between",fontSize:12,color:"#8C8578",background:"#fff"},
 };
