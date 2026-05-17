@@ -20,9 +20,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { recordId, imageBase64, filename, contentType } = req.body;
-    if (!recordId || !imageBase64) {
-      return res.status(400).json({ error: 'Missing recordId or imageBase64' });
+    const { recordId, base64, filename, contentType } = req.body;
+    if (!recordId || !base64) {
+      return res.status(400).json({ error: 'Missing recordId or base64' });
     }
 
     // Step 1: Get upload URL from Airtable
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
       const { uploadUrl, id: attachmentId } = uploadData;
 
       // Step 2: Upload the binary to the upload URL
-      const binaryData = Buffer.from(imageBase64, 'base64');
+      const binaryData = Buffer.from(base64, 'base64');
       const putResp = await fetch(uploadUrl, {
         method: 'PUT',
         headers: { 'Content-Type': contentType || 'image/jpeg' },
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
 
     // Fallback: Try URL-based attachment method
     // First upload to tmpfiles.org (free, no auth, 1hr expiry — enough for Airtable to fetch)
-    const binaryData = Buffer.from(imageBase64, 'base64');
+    const binaryData = Buffer.from(base64, 'base64');
     const formData = new FormData();
     const blob = new Blob([binaryData], { type: contentType || 'image/jpeg' });
     formData.append('file', blob, filename || 'flyer.jpg');
