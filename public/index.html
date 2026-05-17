@@ -205,7 +205,11 @@ function App(){
       {/* Search + Filter button */}
       <div style={S.fRow}>
         <div style={S.searchRow}>
-          <div style={S.sWrap}><span style={S.sIco}>🔍</span><input style={S.sIn} placeholder={t.search} value={search} onChange={e=>setSearch(e.target.value)}/></div>
+          <div style={S.sWrap}>
+            <span style={S.sIco}>🔍</span>
+            <input style={S.sIn} placeholder={t.search} value={search} onChange={e=>setSearch(e.target.value)}/>
+            {search&&<button style={S.sClear} onClick={()=>setSearch('')}>✕</button>}
+          </div>
           <button style={{...S.filterBtn,...(filterOpen||activeFilters>0?S.filterBtnActive:{})}} onClick={()=>setFilterOpen(o=>!o)}>
             ☰ {lang==='it'?'Filtri':'Filters'}{activeFilters>0?` (${activeFilters})`:''}
           </button>
@@ -238,8 +242,22 @@ function App(){
     {loading&&<div style={S.stat}>⏳ {t.loading}</div>}
     {error&&<div style={{...S.stat,background:"#FFF3E0",color:"#E65100"}}>⚠️ {t.sampleData}</div>}
 
+    {/* SEARCH RESULTS — shows across all months when search is active */}
+    {search&&<div style={S.searchResults}>
+      <div style={S.searchResultsHdr}>
+        <span style={S.searchResultsTitle}>🔍 {filtered.length} {lang==='it'?'risultati per':'results for'} "<strong>{search}</strong>"</span>
+        <button style={S.searchClearBtn} onClick={()=>setSearch('')}>{lang==='it'?'Cancella':'Clear'} ✕</button>
+      </div>
+      {filtered.length===0
+        ? <div style={S.emSt}><span style={{fontSize:36}}>🔍</span><p>{t.noMatch}</p></div>
+        : filtered.sort((a,b)=>a.date_start.localeCompare(b.date_start)).map(ev=>(
+            <Card key={ev.id} ev={ev} wide onClick={()=>{setSelEvent(ev);setSearch('');setMonth(new Date(ds(ev.date_start)+'T12:00:00').getMonth());setYear(new Date(ds(ev.date_start)+'T12:00:00').getFullYear())}} t={t}/>
+          ))
+      }
+    </div>}
+
     {/* CALENDAR */}
-    {view==="cal"&&<div className="main-area" style={S.mainA}>
+    {!search&&view==="cal"&&<div className="main-area" style={S.mainA}>
       <div style={S.mNav}><button style={S.arr} onClick={prev}>‹</button><h2 className="month-label" style={S.mLbl}>{t.months[month]} <span style={S.yLbl}>{year}</span></h2><button style={S.arr} onClick={next}>›</button></div>
       <div className="cal-layout" style={S.calL}>
         <div className="cal-grid-wrap" style={S.calGW}>
@@ -277,7 +295,7 @@ function App(){
     </div>}
 
     {/* LIST */}
-    {view==="list"&&<div style={S.listA}>
+    {!search&&view==="list"&&<div style={S.listA}>
       <div style={S.mNav}><button style={S.arr} onClick={prev}>‹</button><h2 className="month-label" style={S.mLbl}>{t.months[month]} <span style={S.yLbl}>{year}</span></h2><button style={S.arr} onClick={next}>›</button></div>
       {monthEvts.length===0?<div style={S.emSt}><span style={{fontSize:48}}>🗓</span><p style={{fontSize:16}}>{t.noMatch}</p></div>
       :monthEvts.map(ev=><Card key={ev.id} ev={ev} wide onClick={()=>setSelEvent(ev)} t={t}/>)}
@@ -369,7 +387,12 @@ const S={
   filterSectionLabel:{fontSize:11,fontWeight:700,color:"#8C8578",textTransform:"uppercase",letterSpacing:.8,marginBottom:8},
   filterChipsWrap:{display:"flex",gap:6,flexWrap:"wrap"},
   filterClose:{width:"100%",padding:"10px",borderRadius:10,background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:700,marginTop:4},
-  sWrap:{position:"relative",maxWidth:400,marginBottom:8},
+  sWrap:{position:"relative",flex:1,maxWidth:400},
+  sClear:{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#8C8578",cursor:"pointer",fontSize:14,padding:4},
+  searchResults:{flex:1,padding:"0 20px 20px"},
+  searchResultsHdr:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0 10px"},
+  searchResultsTitle:{fontSize:14,color:"#6B6560"},
+  searchClearBtn:{background:"#FFEBEE",border:"1px solid #EF9A9A",color:"#C62828",padding:"6px 14px",borderRadius:10,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:700},
   sIco:{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,pointerEvents:"none"},
   sIn:{width:"100%",padding:"9px 14px 9px 36px",borderRadius:12,border:"1px solid #E8E4DD",background:"#FAF7F2",color:"#2D2A26",fontSize:14,fontFamily:"'Nunito',sans-serif",outline:"none"},
   chips:{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"},
