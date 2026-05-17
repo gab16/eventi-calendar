@@ -27,18 +27,20 @@ img{max-width:100%;display:block}
   .side-panel{flex:1 !important;max-height:none !important;min-width:0 !important;border:none !important;border-top:1px solid #E8E4DD !important;border-radius:0 !important;box-shadow:none !important;padding:16px 0 !important}
   .filter-chips{gap:4px !important}
   .chip-btn{padding:4px 8px !important;font-size:11px !important}
-  .cell-evt{font-size:9px !important;padding:1px 3px !important}
   .hdr-top{flex-direction:column !important;align-items:flex-start !important}
   .hdr-act{width:100%;justify-content:space-between !important}
   .month-label{font-size:20px !important}
   .card-img{height:120px !important}
-}
-@media(max-width:480px){
-  .cal-cell{min-height:60px !important;padding:3px !important}
-  .cell-num{font-size:12px !important}
-  .day-hdr{font-size:10px !important;padding:8px 0 !important}
+  .cal-cell{min-height:52px !important;aspect-ratio:unset !important;padding:4px 3px !important}
+  .cell-num{font-size:12px !important;font-weight:700 !important}
+  .day-hdr{font-size:9px !important;padding:7px 2px !important;letter-spacing:0 !important}
   .cell-evt{display:none !important}
   .cell-dots-mobile{display:flex !important}
+  .today-bdg{display:none !important}
+}
+@media(max-width:380px){
+  .cal-cell{min-height:44px !important}
+  .day-hdr{font-size:8px !important}
 }
 </style>
 </head>
@@ -227,7 +229,7 @@ function App(){
               const d=fmt(year,month,day),de=onDate(d),isT=d===todayStr,isS=d===selDate,isW=((fd+day-1)%7)>=5;
               return(
                 <div key={day} className="cal-cell" style={{...S.cl,...(isW?S.clW:{}),...(isT?S.clT:{}),...(isS?S.clS:{})}} onClick={()=>{setSelDate(d);setSelEvent(null)}}>
-                  <div style={S.clH}><span className="cell-num" style={{...S.clN,...(isT?S.clNT:{})}}>{day}</span>{isT&&<span style={S.tBdg}>{t.today.toLowerCase()}</span>}</div>
+                  <div style={S.clH}><span className="cell-num" style={{...S.clN,...(isT?S.clNT:{})}}>{day}</span>{isT&&<span className="today-bdg" style={S.tBdg}>{t.today.toLowerCase()}</span>}</div>
                   <div style={S.clEv}>
                     {de.slice(0,3).map((ev,j)=>{const cs=gc(ev.category);return(
                       <div key={ev.id+'_'+j} className="cell-evt" style={{...S.cEv,background:cs.bg,color:cs.fg,borderLeft:'3px solid '+cs.fg}} onClick={e=>{e.stopPropagation();setSelDate(d);setSelEvent(ev)}} title={ev.event_name}>
