@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Upload Flyer — Eventi Tatti</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:#FAF7F2;color:#2D2A26;font-family:'Nunito',sans-serif;font-size:16px;overflow-x:hidden}
+#root{min-height:100vh;display:flex;flex-direction:column}
+@keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.fi{animation:fi .35s ease}
+.spinner{width:40px;height:40px;border:4px solid #E8E4DD;border-top-color:#2D2A26;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+input,button,textarea{font-family:'Nunito',sans-serif;font-size:16px}
+button{-webkit-appearance:none;appearance:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const{useState,useRef}=React;
+
+const FLOWISE_URL='https://flowise.tattionline.com/api/v1/prediction/f3d22287-f6bf-47df-8403-7c7098b8e067';
+const ADMIN_API='/api/admin'; // used only to validate the password
+
+function App(){
+  const[pw,setPw]=useState('');
+  const[authed,setAuthed]=useState(false);
+  const[authErr,setAuthErr]=useState(false);
+  const[checking,setChecking]=useState(false);
+
+  const[imgPreview,setImgPreview]=useState(null);
+  const[imgData,setImgData]=useState(null); // {dataUrl, filename, mime}
+  const[uploading,setUploading]=useState(false);
+  const[result,setResult]=useState(null); // {ok, message, details}
+  const inputRef=useRef(null);
+
+  async function login(){
+    setChecking(true);setAuthErr(false);
+    try{
+      const r=await fetch(ADMIN_API,{headers:{'X-Admin-Password':pw}});
+      if(r.status===401){setAuthErr(true);setChecking(false);return}
+      if(!r.ok){setAuthErr(true);setChecking(false);return}
+      sessionStorage.setItem('eventi_pw',pw);
+      setAuthed(true);
+    }catch(e){setAuthErr(true)}
+    setChecking(false);
+  }
+
+  // restore from session
+  React.useEffect(()=>{
+    const saved=sessionStorage.getItem('eventi_pw');
+    if(saved){setPw(saved);(async()=>{
+      const r=await fetch(ADMIN_API,{headers:{'X-Admin-Password':saved}});
+      if(r.ok)setAuthed(true);
+      else sessionStorage.removeItem('eventi_pw');
+    })()}
+  },[]);
+
+  function handleImage(e){
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const img=new Image();
+      img.onload=function(){
+        // Compress to max 1600px, JPEG 0.82
+        const MAX=1600;
+        let w=img.width,h=img.height;
+        if(w>MAX){h=h*(MAX/w);w=MAX}
+        if(h>MAX){w=w*(MAX/h);h=MAX}
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const dataUrl=canvas.toDataURL('image/jpeg',0.82);
+        setImgPreview(dataUrl);
+        setImgData({
+          dataUrl,
+          filename:file.name.replace(/\.[^.]+$/,'.jpg'),
+          mime:'image/jpeg',
+        });
+        setResult(null);
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function reset(){
+    setImgPreview(null);
+    setImgData(null);
+    setResult(null);
+    if(inputRef.current)inputRef.current.value='';
+  }
+
+  async function submit(){
+    if(!imgData)return;
+    setUploading(true);setResult(null);
+    try{
+      const resp=await fetch(FLOWISE_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          question:'Extract event details from this flyer and save to Airtable.',
+          uploads:[{
+            data:imgData.dataUrl,
+            type:'file',
+            name:imgData.filename,
+            mime:imgData.mime,
+          }],
+        }),
+      });
+      const text=await resp.text();
+      let body;
+      try{body=JSON.parse(text)}catch(e){body={raw:text}}
+      if(!resp.ok){
+        setResult({ok:false,message:'Error processing flyer',details:body.message||body.raw||text});
+      }else{
+        setResult({ok:true,message:'Flyer received! Event saved as pending for review.',details:body.text||body.message||''});
+      }
+    }catch(e){
+      setResult({ok:false,message:'Network error',details:e.message});
+    }
+    setUploading(false);
+  }
+
+  // ── LOGIN ──
+  if(!authed){
+    return(
+      <div style={S.root}>
+        <div style={S.loginWrap}>
+          <div style={S.loginCard} className="fi">
+            <div style={S.loginIcon}>📸</div>
+            <h1 style={S.loginTitle}>Upload Flyer</h1>
+            <p style={S.loginSub}>Sign in to add a new event</p>
+            <input style={S.loginInput} type="password" placeholder="Password" value={pw}
+              autoFocus
+              onChange={e=>setPw(e.target.value)}
+              onKeyDown={e=>{if(e.key==='Enter')login()}}/>
+            {authErr&&<p style={S.loginErr}>Wrong password</p>}
+            <button style={S.loginBtn} onClick={login} disabled={checking||!pw}>
+              {checking?'Checking…':'Sign In'}
+            </button>
+            <a href="/" style={S.loginLink}>← Back to Calendar</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── UPLOAD UI ──
+  return(
+    <div style={S.root}>
+      <header style={S.hdr}>
+        <h1 style={S.hdrTitle}>📸 Upload Flyer</h1>
+        <a href="/" style={S.hdrLink}>← Calendar</a>
+      </header>
+
+      <main style={S.main}>
+        {!result&&(
+          <div className="fi">
+            {/* Preview area */}
+            <div style={S.previewBox}>
+              {imgPreview?(
+                <img src={imgPreview} alt="Flyer preview" style={S.previewImg}/>
+              ):(
+                <div style={S.placeholder}>
+                  <div style={{fontSize:56,marginBottom:8}}>📷</div>
+                  <p style={{fontSize:15,color:'#8C8578'}}>Take a photo or pick a flyer from your gallery</p>
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            {!imgPreview?(
+              <>
+                <label style={S.bigBtn}>
+                  📷 Take Photo
+                  <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleImage} style={{display:'none'}}/>
+                </label>
+                <label style={S.bigBtnAlt}>
+                  🖼️ Choose from Gallery
+                  <input type="file" accept="image/*" onChange={handleImage} style={{display:'none'}}/>
+                </label>
+              </>
+            ):(
+              <>
+                <button style={S.bigBtn} onClick={submit} disabled={uploading}>
+                  {uploading?(<><span style={S.btnSpinner}></span> Processing…</>):'🚀 Submit Flyer'}
+                </button>
+                <button style={S.bigBtnAlt} onClick={reset} disabled={uploading}>
+                  🔄 Choose Different Photo
+                </button>
+              </>
+            )}
+
+            {uploading&&(
+              <div style={S.processNote}>
+                <div className="spinner" style={{marginBottom:16}}></div>
+                <p style={{fontWeight:700,marginBottom:4}}>Reading the flyer…</p>
+                <p style={{fontSize:13,color:'#8C8578'}}>This usually takes 10–30 seconds.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {result&&(
+          <div className="fi">
+            <div style={{...S.resultBox,...(result.ok?S.resultOk:S.resultErr)}}>
+              <div style={{fontSize:48,marginBottom:12}}>{result.ok?'✅':'⚠️'}</div>
+              <h2 style={S.resultTitle}>{result.message}</h2>
+              {result.details&&(
+                <div style={S.resultDetails}>
+                  <pre style={S.resultPre}>{typeof result.details==='string'?result.details:JSON.stringify(result.details,null,2)}</pre>
+                </div>
+              )}
+            </div>
+            <button style={S.bigBtn} onClick={reset}>
+              📸 Upload Another Flyer
+            </button>
+            <a href="/admin" style={{...S.bigBtnAlt,textDecoration:'none',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              🔍 Open Admin to Review
+            </a>
+          </div>
+        )}
+      </main>
+
+      <footer style={S.ft}>Eventi · tattionline.com</footer>
+    </div>
+  );
+}
+
+const S={
+  root:{minHeight:'100vh',display:'flex',flexDirection:'column',background:'#FAF7F2'},
+
+  // Login
+  loginWrap:{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:20},
+  loginCard:{background:'#fff',borderRadius:24,padding:'36px 28px',maxWidth:360,width:'100%',textAlign:'center',boxShadow:'0 4px 20px rgba(0,0,0,.08)',border:'1px solid #E8E4DD'},
+  loginIcon:{fontSize:56,marginBottom:8},
+  loginTitle:{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,marginBottom:6},
+  loginSub:{fontSize:14,color:'#8C8578',marginBottom:24},
+  loginInput:{width:'100%',padding:'14px 16px',borderRadius:14,border:'1px solid #E8E4DD',background:'#FAF7F2',fontSize:17,textAlign:'center',outline:'none',letterSpacing:2,marginBottom:8},
+  loginErr:{color:'#C62828',fontSize:13,fontWeight:600,margin:'4px 0'},
+  loginBtn:{width:'100%',padding:'14px',borderRadius:14,background:'#2D2A26',color:'#fff',border:'none',fontSize:16,fontWeight:700,cursor:'pointer',marginTop:12},
+  loginLink:{display:'block',marginTop:20,fontSize:13,color:'#8C8578',textDecoration:'none'},
+
+  // Header
+  hdr:{background:'#fff',borderBottom:'1px solid #E8E4DD',padding:'14px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10},
+  hdrTitle:{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,margin:0},
+  hdrLink:{fontSize:14,color:'#1976D2',textDecoration:'none',fontWeight:600},
+
+  // Main
+  main:{flex:1,padding:20,maxWidth:500,margin:'0 auto',width:'100%'},
+
+  previewBox:{background:'#fff',borderRadius:16,border:'2px dashed #E8E4DD',marginBottom:20,minHeight:240,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',padding:8},
+  previewImg:{maxWidth:'100%',maxHeight:400,borderRadius:10,display:'block'},
+  placeholder:{textAlign:'center',padding:'40px 20px'},
+
+  bigBtn:{width:'100%',padding:'18px 20px',borderRadius:16,background:'#2D2A26',color:'#fff',border:'none',fontSize:17,fontWeight:700,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8},
+  bigBtnAlt:{width:'100%',padding:'16px 20px',borderRadius:16,background:'#fff',color:'#2D2A26',border:'1px solid #E8E4DD',fontSize:16,fontWeight:600,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8},
+  btnSpinner:{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'},
+
+  processNote:{textAlign:'center',marginTop:24,padding:24,background:'#fff',borderRadius:16,border:'1px solid #E8E4DD'},
+
+  resultBox:{padding:'32px 24px',borderRadius:20,textAlign:'center',marginBottom:20,border:'1px solid'},
+  resultOk:{background:'#E8F5E9',borderColor:'#A5D6A7',color:'#1B5E20'},
+  resultErr:{background:'#FFEBEE',borderColor:'#EF9A9A',color:'#B71C1C'},
+  resultTitle:{fontSize:20,fontWeight:700,marginBottom:12,fontFamily:"'Playfair Display',serif"},
+  resultDetails:{background:'rgba(255,255,255,.6)',borderRadius:10,padding:12,marginTop:16,textAlign:'left'},
+  resultPre:{fontFamily:'monospace',fontSize:12,whiteSpace:'pre-wrap',wordBreak:'break-word',maxHeight:200,overflow:'auto'},
+
+  ft:{padding:'14px 20px',textAlign:'center',fontSize:12,color:'#8C8578',background:'#fff',borderTop:'1px solid #E8E4DD'},
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
