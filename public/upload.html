@@ -7,6 +7,13 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if (window.pdfjsLib) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -27,10 +34,34 @@ button{-webkit-appearance:none;appearance:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script type="text/babel">
-const{useState,useRef}=React;
+const{useState,useRef,useEffect}=React;
 
 const FLOWISE_URL='https://flowise.tattionline.com/api/v1/prediction/f3d22287-f6bf-47df-8403-7c7098b8e067';
-const ADMIN_API='/api/admin'; // used only to validate the password
+const ADMIN_API='/api/admin';
+const UPLOAD_API='/api/upload';
+
+function imgToJpeg(img, MAX=1600, Q=0.82){
+  let w=img.width||img.naturalWidth, h=img.height||img.naturalHeight;
+  if(w>MAX){h=h*(MAX/w);w=MAX}
+  if(h>MAX){w=w*(MAX/h);h=MAX}
+  const c=document.createElement('canvas');
+  c.width=w; c.height=h;
+  c.getContext('2d').drawImage(img,0,0,w,h);
+  return c.toDataURL('image/jpeg',Q);
+}
+
+async function pdfFirstPageToJpeg(file, MAX=1600, Q=0.85){
+  const buf=await file.arrayBuffer();
+  const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+  const page=await pdf.getPage(1);
+  const v1=page.getViewport({scale:1});
+  const scale=Math.min(MAX/v1.width, MAX/v1.height, 3);
+  const v=page.getViewport({scale});
+  const c=document.createElement('canvas');
+  c.width=v.width; c.height=v.height;
+  await page.render({canvasContext:c.getContext('2d'),viewport:v}).promise;
+  return c.toDataURL('image/jpeg',Q);
+}
 
 function App(){
   const[pw,setPw]=useState('');
@@ -39,16 +70,19 @@ function App(){
   const[checking,setChecking]=useState(false);
 
   const[imgPreview,setImgPreview]=useState(null);
-  const[imgData,setImgData]=useState(null); // {dataUrl, filename, mime}
+  const[imgData,setImgData]=useState(null);
+  const[converting,setConverting]=useState(false);
+  const[converrMsg,setConverrMsg]=useState(null);
+
   const[uploading,setUploading]=useState(false);
-  const[result,setResult]=useState(null); // {ok, message, details}
+  const[phase,setPhase]=useState(null);
+  const[result,setResult]=useState(null);
   const inputRef=useRef(null);
 
   async function login(){
     setChecking(true);setAuthErr(false);
     try{
       const r=await fetch(ADMIN_API,{headers:{'X-Admin-Password':pw}});
-      if(r.status===401){setAuthErr(true);setChecking(false);return}
       if(!r.ok){setAuthErr(true);setChecking(false);return}
       sessionStorage.setItem('eventi_pw',pw);
       setAuthed(true);
@@ -56,55 +90,88 @@ function App(){
     setChecking(false);
   }
 
-  // restore from session
-  React.useEffect(()=>{
+  useEffect(()=>{
     const saved=sessionStorage.getItem('eventi_pw');
     if(saved){setPw(saved);(async()=>{
-      const r=await fetch(ADMIN_API,{headers:{'X-Admin-Password':saved}});
-      if(r.ok)setAuthed(true);
-      else sessionStorage.removeItem('eventi_pw');
+      try{
+        const r=await fetch(ADMIN_API,{headers:{'X-Admin-Password':saved}});
+        if(r.ok)setAuthed(true);
+        else sessionStorage.removeItem('eventi_pw');
+      }catch(e){sessionStorage.removeItem('eventi_pw')}
     })()}
   },[]);
 
-  function handleImage(e){
+  async function handleFile(e){
     const file=e.target.files[0];
     if(!file)return;
-    const reader=new FileReader();
-    reader.onload=function(ev){
-      const img=new Image();
-      img.onload=function(){
-        // Compress to max 1600px, JPEG 0.82
-        const MAX=1600;
-        let w=img.width,h=img.height;
-        if(w>MAX){h=h*(MAX/w);w=MAX}
-        if(h>MAX){w=w*(MAX/h);h=MAX}
-        const canvas=document.createElement('canvas');
-        canvas.width=w;canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        const dataUrl=canvas.toDataURL('image/jpeg',0.82);
-        setImgPreview(dataUrl);
-        setImgData({
-          dataUrl,
-          filename:file.name.replace(/\.[^.]+$/,'.jpg'),
-          mime:'image/jpeg',
+    setConverrMsg(null);
+    setResult(null);
+    setConverting(true);
+    try{
+      const isPdf = file.type==='application/pdf' || /\.pdf$/i.test(file.name);
+      let dataUrl;
+      if(isPdf){
+        if(!window.pdfjsLib) throw new Error('PDF library not loaded — refresh the page');
+        dataUrl = await pdfFirstPageToJpeg(file);
+      } else {
+        dataUrl = await new Promise((resolve,reject)=>{
+          const reader=new FileReader();
+          reader.onload=ev=>{
+            const img=new Image();
+            img.onload=()=>resolve(imgToJpeg(img));
+            img.onerror=()=>reject(new Error('Could not read image'));
+            img.src=ev.target.result;
+          };
+          reader.onerror=()=>reject(new Error('Could not read file'));
+          reader.readAsDataURL(file);
         });
-        setResult(null);
-      };
-      img.src=ev.target.result;
-    };
-    reader.readAsDataURL(file);
+      }
+      const base64 = dataUrl.split(',')[1];
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      setImgPreview(dataUrl);
+      setImgData({dataUrl,base64,filename:baseName+'.jpg',mime:'image/jpeg'});
+    }catch(err){
+      setConverrMsg('⚠️ '+(err.message||'Could not process file'));
+      setImgPreview(null); setImgData(null);
+    }
+    setConverting(false);
   }
 
   function reset(){
     setImgPreview(null);
     setImgData(null);
     setResult(null);
+    setPhase(null);
+    setConverrMsg(null);
     if(inputRef.current)inputRef.current.value='';
+  }
+
+  function extractRecordId(flowiseJson){
+    try{
+      const tools = flowiseJson?.usedTools || [];
+      for(const t of tools){
+        if(!t.toolOutput) continue;
+        let out = t.toolOutput;
+        if(typeof out==='string'){
+          try{ out = JSON.parse(out) }catch(e){}
+        }
+        if(Array.isArray(out)){
+          for(const row of out){
+            if(row.id) return {id: row.id, created: row.created!==false, name: row.event_name};
+            if(row.skipped) return {id:null, created:false, name:row.event_name, reason:'duplicate'};
+          }
+        }
+      }
+    }catch(e){}
+    return null;
   }
 
   async function submit(){
     if(!imgData)return;
     setUploading(true);setResult(null);
+
+    setPhase('extracting');
+    let flowiseJson;
     try{
       const resp=await fetch(FLOWISE_URL,{
         method:'POST',
@@ -120,20 +187,68 @@ function App(){
         }),
       });
       const text=await resp.text();
-      let body;
-      try{body=JSON.parse(text)}catch(e){body={raw:text}}
+      try{flowiseJson=JSON.parse(text)}catch(e){flowiseJson={raw:text}}
       if(!resp.ok){
-        setResult({ok:false,message:'Error processing flyer',details:body.message||body.raw||text});
-      }else{
-        setResult({ok:true,message:'Flyer received! Event saved as pending for review.',details:body.text||body.message||''});
+        setResult({ok:false,message:'Error reading flyer',details:flowiseJson.message||flowiseJson.raw||text});
+        setUploading(false);setPhase(null);return;
       }
     }catch(e){
-      setResult({ok:false,message:'Network error',details:e.message});
+      setResult({ok:false,message:'Network error reading flyer',details:e.message});
+      setUploading(false);setPhase(null);return;
     }
-    setUploading(false);
+
+    const info = extractRecordId(flowiseJson);
+
+    if(!info){
+      setResult({ok:false,message:'Flyer read but could not find new record',details:JSON.stringify(flowiseJson,null,2)});
+      setUploading(false);setPhase(null);return;
+    }
+
+    if(info.reason==='duplicate'){
+      setResult({
+        ok:true,
+        message:'Event already exists — skipped',
+        details:'"'+info.name+'" is already in the calendar.',
+        recordId:null,imgAttached:false,
+      });
+      setUploading(false);setPhase(null);return;
+    }
+
+    setPhase('attaching');
+    let imgAttached=false;
+    let imgErr=null;
+    try{
+      const r=await fetch(UPLOAD_API,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Admin-Password':pw},
+        body:JSON.stringify({
+          recordId: info.id,
+          base64: imgData.base64,
+          filename: imgData.filename,
+          contentType: imgData.mime,
+        }),
+      });
+      if(r.ok) imgAttached=true;
+      else {
+        const t=await r.text();
+        imgErr = t;
+      }
+    }catch(e){imgErr=e.message}
+
+    setResult({
+      ok:true,
+      message: imgAttached
+        ? '✅ Event saved with flyer image'
+        : '⚠️ Event saved, but image upload failed',
+      details: imgAttached
+        ? '"'+info.name+'" was created as pending. Image attached.'
+        : '"'+info.name+'" was created, but the image did not attach. Details: '+imgErr,
+      recordId: info.id,
+      imgAttached,
+    });
+    setUploading(false);setPhase(null);
   }
 
-  // ── LOGIN ──
   if(!authed){
     return(
       <div style={S.root}>
@@ -157,7 +272,6 @@ function App(){
     );
   }
 
-  // ── UPLOAD UI ──
   return(
     <div style={S.root}>
       <header style={S.hdr}>
@@ -168,37 +282,43 @@ function App(){
       <main style={S.main}>
         {!result&&(
           <div className="fi">
-            {/* Preview area */}
             <div style={S.previewBox}>
-              {imgPreview?(
+              {converting?(
+                <div style={S.placeholder}>
+                  <div className="spinner" style={{marginBottom:12}}></div>
+                  <p style={{fontSize:14,color:'#8C8578'}}>Processing file…</p>
+                </div>
+              ):imgPreview?(
                 <img src={imgPreview} alt="Flyer preview" style={S.previewImg}/>
               ):(
                 <div style={S.placeholder}>
                   <div style={{fontSize:56,marginBottom:8}}>📷</div>
-                  <p style={{fontSize:15,color:'#8C8578'}}>Take a photo or pick a flyer from your gallery</p>
+                  <p style={{fontSize:15,color:'#8C8578',marginBottom:6}}>Take a photo, pick from gallery, or upload a PDF</p>
+                  <p style={{fontSize:12,color:'#A8A09A'}}>Accepts JPG, PNG, HEIC, PDF</p>
                 </div>
               )}
             </div>
 
-            {/* Action buttons */}
+            {converrMsg&&<div style={S.errBox}>{converrMsg}</div>}
+
             {!imgPreview?(
               <>
                 <label style={S.bigBtn}>
                   📷 Take Photo
-                  <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleImage} style={{display:'none'}}/>
+                  <input ref={inputRef} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{display:'none'}}/>
                 </label>
                 <label style={S.bigBtnAlt}>
-                  🖼️ Choose from Gallery
-                  <input type="file" accept="image/*" onChange={handleImage} style={{display:'none'}}/>
+                  🖼️ Choose Photo or PDF
+                  <input type="file" accept="image/*,application/pdf" onChange={handleFile} style={{display:'none'}}/>
                 </label>
               </>
             ):(
               <>
                 <button style={S.bigBtn} onClick={submit} disabled={uploading}>
-                  {uploading?(<><span style={S.btnSpinner}></span> Processing…</>):'🚀 Submit Flyer'}
+                  {uploading?(<><span style={S.btnSpinner}></span> {phase==='extracting'?'Reading flyer…':phase==='attaching'?'Attaching image…':'Processing…'}</>):'🚀 Submit Flyer'}
                 </button>
                 <button style={S.bigBtnAlt} onClick={reset} disabled={uploading}>
-                  🔄 Choose Different Photo
+                  🔄 Choose Different File
                 </button>
               </>
             )}
@@ -206,8 +326,14 @@ function App(){
             {uploading&&(
               <div style={S.processNote}>
                 <div className="spinner" style={{marginBottom:16}}></div>
-                <p style={{fontWeight:700,marginBottom:4}}>Reading the flyer…</p>
-                <p style={{fontSize:13,color:'#8C8578'}}>This usually takes 10–30 seconds.</p>
+                <p style={{fontWeight:700,marginBottom:4}}>
+                  {phase==='extracting' && 'Reading the flyer with AI…'}
+                  {phase==='attaching' && 'Attaching image to the event…'}
+                </p>
+                <p style={{fontSize:13,color:'#8C8578'}}>
+                  {phase==='extracting' && 'This usually takes 10–30 seconds.'}
+                  {phase==='attaching' && 'Almost done.'}
+                </p>
               </div>
             )}
           </div>
@@ -216,7 +342,7 @@ function App(){
         {result&&(
           <div className="fi">
             <div style={{...S.resultBox,...(result.ok?S.resultOk:S.resultErr)}}>
-              <div style={{fontSize:48,marginBottom:12}}>{result.ok?'✅':'⚠️'}</div>
+              <div style={{fontSize:48,marginBottom:12}}>{result.ok?(result.imgAttached!==false?'✅':'⚠️'):'❌'}</div>
               <h2 style={S.resultTitle}>{result.message}</h2>
               {result.details&&(
                 <div style={S.resultDetails}>
@@ -241,8 +367,6 @@ function App(){
 
 const S={
   root:{minHeight:'100vh',display:'flex',flexDirection:'column',background:'#FAF7F2'},
-
-  // Login
   loginWrap:{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:20},
   loginCard:{background:'#fff',borderRadius:24,padding:'36px 28px',maxWidth:360,width:'100%',textAlign:'center',boxShadow:'0 4px 20px rgba(0,0,0,.08)',border:'1px solid #E8E4DD'},
   loginIcon:{fontSize:56,marginBottom:8},
@@ -252,32 +376,24 @@ const S={
   loginErr:{color:'#C62828',fontSize:13,fontWeight:600,margin:'4px 0'},
   loginBtn:{width:'100%',padding:'14px',borderRadius:14,background:'#2D2A26',color:'#fff',border:'none',fontSize:16,fontWeight:700,cursor:'pointer',marginTop:12},
   loginLink:{display:'block',marginTop:20,fontSize:13,color:'#8C8578',textDecoration:'none'},
-
-  // Header
   hdr:{background:'#fff',borderBottom:'1px solid #E8E4DD',padding:'14px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10},
   hdrTitle:{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,margin:0},
   hdrLink:{fontSize:14,color:'#1976D2',textDecoration:'none',fontWeight:600},
-
-  // Main
   main:{flex:1,padding:20,maxWidth:500,margin:'0 auto',width:'100%'},
-
   previewBox:{background:'#fff',borderRadius:16,border:'2px dashed #E8E4DD',marginBottom:20,minHeight:240,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',padding:8},
   previewImg:{maxWidth:'100%',maxHeight:400,borderRadius:10,display:'block'},
   placeholder:{textAlign:'center',padding:'40px 20px'},
-
+  errBox:{background:'#FFEBEE',color:'#B71C1C',border:'1px solid #EF9A9A',padding:'12px 16px',borderRadius:12,fontSize:14,marginBottom:12,textAlign:'center'},
   bigBtn:{width:'100%',padding:'18px 20px',borderRadius:16,background:'#2D2A26',color:'#fff',border:'none',fontSize:17,fontWeight:700,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8},
   bigBtnAlt:{width:'100%',padding:'16px 20px',borderRadius:16,background:'#fff',color:'#2D2A26',border:'1px solid #E8E4DD',fontSize:16,fontWeight:600,cursor:'pointer',marginBottom:12,display:'flex',alignItems:'center',justifyContent:'center',gap:8},
   btnSpinner:{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'},
-
   processNote:{textAlign:'center',marginTop:24,padding:24,background:'#fff',borderRadius:16,border:'1px solid #E8E4DD'},
-
   resultBox:{padding:'32px 24px',borderRadius:20,textAlign:'center',marginBottom:20,border:'1px solid'},
   resultOk:{background:'#E8F5E9',borderColor:'#A5D6A7',color:'#1B5E20'},
   resultErr:{background:'#FFEBEE',borderColor:'#EF9A9A',color:'#B71C1C'},
   resultTitle:{fontSize:20,fontWeight:700,marginBottom:12,fontFamily:"'Playfair Display',serif"},
   resultDetails:{background:'rgba(255,255,255,.6)',borderRadius:10,padding:12,marginTop:16,textAlign:'left'},
   resultPre:{fontFamily:'monospace',fontSize:12,whiteSpace:'pre-wrap',wordBreak:'break-word',maxHeight:200,overflow:'auto'},
-
   ft:{padding:'14px 20px',textAlign:'center',fontSize:12,color:'#8C8578',background:'#fff',borderTop:'1px solid #E8E4DD'},
 };
 
