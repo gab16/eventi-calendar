@@ -308,17 +308,18 @@ function EditForm({event,pw,onSave,onCancel,saving}){
         <button style={S.backBtn} onClick={onCancel}>← Cancel</button>
         <h2 style={S.formTitle}>Edit Event</h2>
       </div>
-      {/* Image upload */}
+      {/* Image attachment (just stores the picture, does NOT extract data) */}
       <div style={S.imgSection}>
-        <span style={S.fieldLabel}>Flyer Image</span>
+        <span style={S.fieldLabel}>📎 Attach Flyer Picture (optional)</span>
+        <p style={S.imgHelp}>Only attaches the image to this event. It does NOT extract any data — fill the fields below by hand.</p>
         <div style={S.imgRow}>
           {imgPreview&&<img src={imgPreview} alt="Flyer" style={S.imgThumb}/>}
           <div style={S.imgUpload}>
             <label style={S.imgBtn}>
-              📸 {imgPreview?'Change image':'Upload flyer'}
+              🖼️ {imgPreview?'Replace picture':'Choose picture'}
               <input type="file" accept="image/*" onChange={handleImage} style={{display:'none'}}/>
             </label>
-            {imgData&&<span style={S.imgReady}>✅ Ready to upload</span>}
+            {imgData&&<span style={S.imgReady}>✅ Ready to attach</span>}
             {uploadMsg&&<span style={{fontSize:12}}>{uploadMsg}</span>}
           </div>
         </div>
@@ -387,17 +388,18 @@ function AddForm({onSubmit,pw}){
         <h2 style={S.formTitle}>➕ Add Event Manually</h2>
         <p style={S.formSub}>Fill in the details. The event will be created as "pending".</p>
       </div>
-      {/* Image upload */}
+      {/* Image attachment (just stores the picture, does NOT extract data) */}
       <div style={S.imgSection}>
-        <span style={S.fieldLabel}>Flyer Image</span>
+        <span style={S.fieldLabel}>📎 Attach Flyer Picture (optional)</span>
+        <p style={S.imgHelp}>Only attaches the image to this event. It does NOT extract any data — fill the fields below by hand. If you want AI to read the flyer for you, use the <a href="/upload.html" style={{color:'#1976D2',fontWeight:600}}>Upload Page</a> instead.</p>
         <div style={S.imgRow}>
           {imgPreview&&<img src={imgPreview} alt="Flyer" style={S.imgThumb}/>}
           <div style={S.imgUpload}>
             <label style={S.imgBtn}>
-              📸 {imgPreview?'Change image':'Upload flyer'}
+              🖼️ {imgPreview?'Replace picture':'Choose picture'}
               <input type="file" accept="image/*" onChange={handleImage} style={{display:'none'}}/>
             </label>
-            {imgData&&<span style={S.imgReady}>✅ Ready to upload</span>}
+            {imgData&&<span style={S.imgReady}>✅ Ready to attach</span>}
           </div>
         </div>
       </div>
@@ -420,7 +422,7 @@ function AddForm({onSubmit,pw}){
           onClick={()=>onSubmit(f,imgData)}
         >📤 Submit for Review</button>
       </div>
-      <p style={S.formHint}>💡 Tip: For fastest input, upload a flyer screenshot through Flowise — AI will extract all the details automatically.</p>
+      <p style={S.formHint}>💡 Tip: For fastest input, use the <a href="/upload.html" style={{color:'#1976D2',fontWeight:700}}>📸 Upload Page</a> — AI will extract event details automatically from a flyer photo.</p>
     </div>
   );
 }
@@ -511,6 +513,7 @@ const S={
 
   // Image upload
   imgSection:{marginBottom:16},
+  imgHelp:{fontSize:12,color:'#8C8578',marginTop:4,marginBottom:8,lineHeight:1.4,fontStyle:'italic'},
   imgRow:{display:"flex",gap:16,alignItems:"flex-start",marginTop:8},
   imgThumb:{width:120,height:120,objectFit:"cover",borderRadius:10,border:"1px solid #E8E4DD"},
   imgUpload:{display:"flex",flexDirection:"column",gap:8},
