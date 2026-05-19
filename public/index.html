@@ -141,6 +141,22 @@ footer{background:#fff;border-top:1px solid var(--cream-dark);padding:38px 28px 
 .loading{display:flex;align-items:center;justify-content:center;padding:32px;color:var(--text-light);font-size:13.5px;gap:8px}
 .spin{width:16px;height:16px;border:2px solid var(--cream-dark);border-top-color:var(--green-mid);border-radius:50%;animation:sp 0.8s linear infinite;flex-shrink:0}
 @keyframes sp{to{transform:rotate(360deg)}}
+.sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;opacity:0;transition:opacity 0.25s}
+.sheet-overlay.open{display:block;opacity:1}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:18px 18px 0 0;z-index:201;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);max-height:88vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px)}
+.bottom-sheet.open{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--cream-dark);border-radius:2px;margin:12px auto 4px}
+.sheet-close{position:absolute;top:12px;right:14px;width:28px;height:28px;border:none;background:var(--cream);border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text-mid)}
+.sheet-img{width:100%;height:180px;overflow:hidden;background:linear-gradient(135deg,var(--cream-dark),#d4e8c4)}
+.sheet-img-ph{width:100%;height:140px;background:linear-gradient(135deg,#c8dfc8,#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:44px}
+.sheet-body{padding:16px 20px 28px}
+.sheet-title{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;color:var(--text-dark);margin:8px 0 14px;line-height:1.25}
+.sheet-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13.5px;color:var(--text-mid);line-height:1.4}
+.sheet-row svg{flex-shrink:0;margin-top:2px}
+.sheet-desc{font-size:13px;color:var(--text-mid);line-height:1.6;margin-top:14px;padding-top:14px;border-top:1px solid var(--cream-dark)}
+.sheet-actions{display:flex;gap:10px;margin-top:18px}
+.sheet-btn-primary{flex:1;background:var(--green-dark);color:#fff;border:none;padding:13px;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif}
+.sheet-btn-icon{width:44px;height:44px;border:1.5px solid var(--cream-dark);border-radius:var(--r-sm);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid);font-size:17px}
 @media(max-width:900px){
   .hero{grid-template-columns:1fr;padding-bottom:0}.hero-right{display:none}
   .main-wrap{grid-template-columns:1fr}.sidebar{position:static;display:none}
@@ -337,6 +353,13 @@ footer{background:#fff;border-top:1px solid var(--cream-dark);padding:38px 28px 
   </div>
 </footer>
 
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <button class="sheet-close" onclick="closeSheet()">&#10005;</button>
+  <div id="sheet-content"></div>
+</div>
+
 <script>
 var API_URL="/api/events";
 var MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -359,51 +382,87 @@ function catLabel(cat){
   return m[catKey(cat)]||cat||"Altro";
 }
 function fmtDate(s,e){
-  if(!s)return"\u2014";
+  if(!s)return"—";
   var sd=new Date(s);
   if(!e||e===s)return sd.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
-  return new Date(s).toLocaleDateString("it-IT",{day:"numeric",month:"long"})+" \u2192 "+new Date(e).toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+  return new Date(s).toLocaleDateString("it-IT",{day:"numeric",month:"long"})+" → "+new Date(e).toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function encEv(ev){return encodeURIComponent(JSON.stringify(ev))}
 function decEv(s){return JSON.parse(decodeURIComponent(s))}
 
+var SVG_CAL='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="12" rx="2" stroke="#718096" stroke-width="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_PIN='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.5-2-4.5-4.5-4.5z" stroke="#718096" stroke-width="1.5"/><circle cx="8" cy="6" r="1.5" stroke="#718096" stroke-width="1.5"/></svg>';
+var SVG_CLK='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#718096" stroke-width="1.5"/><path d="M8 5v3.5l2 1.5" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_TKT='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="10" rx="2" stroke="#718096" stroke-width="1.5"/><path d="M5 4V2.5a1 1 0 012 0V4M9 4V2.5a1 1 0 012 0V4" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_GLOB='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#718096" stroke-width="1.5"/><path d="M8 1.5S5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5S10.5 4 10.5 8 8 14.5 8 14.5M1.5 8h13" stroke="#718096" stroke-width="1.2"/></svg>';
+
+function buildRows(ev, cls){
+  var price=ev.price?(String(ev.price)==="0"?"Gratuito":ev.price):"Gratuito";
+  var langs={it:"Italiano",en:"English",de:"Deutsch",fr:"Français"};
+  var lang=ev.language?langs[ev.language]||ev.language:"";
+  var h="";
+  h+="<div class='"+cls+"'>"+SVG_CAL+"<span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
+  h+="<div class='"+cls+"'>"+SVG_PIN+"<span>"+esc(ev.location_name||ev.address||"—")+"</span></div>";
+  if(ev.time_start)h+="<div class='"+cls+"'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
+  h+="<div class='"+cls+"'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
+  if(lang)h+="<div class='"+cls+"'>"+SVG_GLOB+"<span>"+esc(lang)+"</span></div>";
+  return h;
+}
+
 function showDetail(ev){
   var cat=catKey(ev.category);
   var img=ev.flyer_image&&ev.flyer_image[0]?ev.flyer_image[0].url:"";
-  var price=ev.price?(String(ev.price)==="0"?"Gratuito":ev.price):"Gratuito";
-  var langs={it:"Italiano",en:"English",de:"Deutsch",fr:"Fran\u00e7ais"};
-  var lang=ev.language?langs[ev.language]||ev.language:"";
-  var h="<div class=\"detail-img-wrap\">"+(img?"<img src=\""+esc(img)+"\" loading=\"lazy\" alt=\""+esc(ev.event_name||"")+"\"/>":"&#127807;")+"</div>";
-  h+="<div class=\"detail-body\">";
-  h+="<span class=\"cat-pill c-"+cat+"\">"+catLabel(ev.category)+"</span>";
-  h+="<div class=\"detail-title\">"+esc(ev.event_name||"Evento")+"</div>";
-  h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><rect x=\"2\" y=\"3\" width=\"12\" height=\"12\" rx=\"2\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M5 1v3M11 1v3M2 7h12\" stroke=\"#718096\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
-  h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><path d=\"M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.5-2-4.5-4.5-4.5z\" stroke=\"#718096\" stroke-width=\"1.5\"/><circle cx=\"8\" cy=\"6\" r=\"1.5\" stroke=\"#718096\" stroke-width=\"1.5\"/></svg><span>"+esc(ev.location_name||ev.address||"\u2014")+"</span></div>";
-  if(ev.time_start)h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><circle cx=\"8\" cy=\"8\" r=\"6.5\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M8 5v3.5l2 1.5\" stroke=\"#718096\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><span>"+esc(ev.time_start)+"</span></div>";
-  h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><rect x=\"1.5\" y=\"4\" width=\"13\" height=\"10\" rx=\"2\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M5 4V2.5a1 1 0 012 0V4M9 4V2.5a1 1 0 012 0V4\" stroke=\"#718096\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><span>"+esc(price)+"</span></div>";
-  if(lang)h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><circle cx=\"8\" cy=\"8\" r=\"6.5\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M8 1.5S5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5S10.5 4 10.5 8 8 14.5 8 14.5M1.5 8h13\" stroke=\"#718096\" stroke-width=\"1.2\"/></svg><span>"+esc(lang)+"</span></div>";
-  h+="<div class=\"detail-actions\"><button class=\"btn-primary\">Vedi dettagli</button><button class=\"btn-icon\" title=\"Salva\">&#9825;</button><button class=\"btn-icon\" title=\"Condividi\">&#8599;</button></div>";
-  h+="</div>";
-  document.getElementById("event-detail").innerHTML=h;
+  var isMobile=window.innerWidth<=900;
+  if(isMobile){
+    var h=img
+      ? "<div class='sheet-img'><img src='"+esc(img)+"' loading='lazy' alt='"+esc(ev.event_name||"")+"' style='width:100%;height:100%;object-fit:cover'/></div>"
+      : "<div class='sheet-img-ph'>&#127807;</div>";
+    h+="<div class='sheet-body'>";
+    h+="<span class='cat-pill c-"+cat+"'>"+catLabel(ev.category)+"</span>";
+    h+="<div class='sheet-title'>"+esc(ev.event_name||"Evento")+"</div>";
+    h+=buildRows(ev,"sheet-row");
+    if(ev.description)h+="<div class='sheet-desc'>"+esc(ev.description)+"</div>";
+    h+="<div class='sheet-actions'><button class='sheet-btn-primary'>Vedi dettagli</button><button class='sheet-btn-icon'>&#9825;</button><button class='sheet-btn-icon'>&#8599;</button></div>";
+    h+="</div>";
+    document.getElementById("sheet-content").innerHTML=h;
+    document.getElementById("sheet-overlay").classList.add("open");
+    document.getElementById("bottom-sheet").classList.add("open");
+    document.body.style.overflow="hidden";
+  } else {
+    var h="<div class='detail-img-wrap'>"+(img?"<img src='"+esc(img)+"' loading='lazy' alt='"+esc(ev.event_name||"")+"'/>":"&#127807;")+"</div>";
+    h+="<div class='detail-body'>";
+    h+="<span class='cat-pill c-"+cat+"'>"+catLabel(ev.category)+"</span>";
+    h+="<div class='detail-title'>"+esc(ev.event_name||"Evento")+"</div>";
+    h+=buildRows(ev,"detail-row");
+    h+="<div class='detail-actions'><button class='btn-primary'>Vedi dettagli</button><button class='btn-icon' title='Salva'>&#9825;</button><button class='btn-icon' title='Condividi'>&#8599;</button></div>";
+    h+="</div>";
+    document.getElementById("event-detail").innerHTML=h;
+  }
+}
+
+function closeSheet(){
+  document.getElementById("sheet-overlay").classList.remove("open");
+  document.getElementById("bottom-sheet").classList.remove("open");
+  document.body.style.overflow="";
 }
 
 function renderFeatured(){
   var src=filteredEvents.filter(function(e){return e.is_featured||e.is_sponsored});
   var list=(src.length?src:filteredEvents).slice(0,10);
   var el=document.getElementById("featured-scroll");
-  if(!list.length){el.innerHTML="<div class=\"loading\">Nessun evento trovato</div>";return}
+  if(!list.length){el.innerHTML="<div class='loading'>Nessun evento trovato</div>";return}
   el.innerHTML=list.map(function(ev){
     var cat=catKey(ev.category);
     var d=ev.date_start?new Date(ev.date_start):null;
     var img=ev.flyer_image&&ev.flyer_image[0]?ev.flyer_image[0].url:"";
     var key=encEv(ev);
-    return"<div class=\"ev-card\" onclick=\"showDetail(decEv(this.dataset.ev))\" data-ev=\""+esc(key)+"\">"
-      +"<div class=\"ev-card-img\">"+(img?"<img src=\""+esc(img)+"\" alt=\""+esc(ev.event_name||"")+"\" loading=\"lazy\"/>":"<div class=\"ev-img-ph\">&#127807;</div>")
-      +(d?"<div class=\"ev-date-badge\"><span class=\"day\">"+d.getDate()+"</span>"+MONTHS[d.getMonth()].slice(0,3).toUpperCase()+"</div>":"")
-      +"</div><span class=\"cat-pill c-"+cat+"\">"+catLabel(ev.category)+"</span>"
-      +"<div class=\"ev-card-name\">"+esc(ev.event_name||"Evento")+"</div>"
-      +"<div class=\"ev-card-loc\">&#128205; "+esc(ev.location_name||ev.address||"\u2014")+"</div></div>";
+    return "<div class='ev-card' onclick='showDetail(decEv(this.dataset.ev))' data-ev='"+key+"'>"
+      +"<div class='ev-card-img'>"+(img?"<img src='"+esc(img)+"' alt='"+esc(ev.event_name||"")+"' loading='lazy'/>":"<div class='ev-img-ph'>&#127807;</div>")
+      +(d?"<div class='ev-date-badge'><span class='day'>"+d.getDate()+"</span>"+MONTHS[d.getMonth()].slice(0,3).toUpperCase()+"</div>":"")
+      +"</div><span class='cat-pill c-"+cat+"'>"+catLabel(ev.category)+"</span>"
+      +"<div class='ev-card-name'>"+esc(ev.event_name||"Evento")+"</div>"
+      +"<div class='ev-card-loc'>&#128205; "+esc(ev.location_name||ev.address||"—")+"</div></div>";
   }).join("");
 }
 
@@ -424,20 +483,20 @@ function renderCalendar(){
       }
     }
   });
-  var h=DAYS.map(function(d){return"<div class=\"cal-day-hdr\">"+d+"</div>"}).join("");
-  for(var i=startDow-1;i>=0;i--)h+="<div class=\"cal-cell other-month\"><div class=\"cal-date\">"+(daysInPrev-i)+"</div></div>";
+  var h=DAYS.map(function(d){return"<div class='cal-day-hdr'>"+d+"</div>"}).join("");
+  for(var i=startDow-1;i>=0;i--)h+="<div class='cal-cell other-month'><div class='cal-date'>"+(daysInPrev-i)+"</div></div>";
   for(var d=1;d<=daysInM;d++){
     var isT=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
     var evs=byDay[d]||[];
     var pills=evs.slice(0,2).map(function(ev){
       var key=encEv(ev);
-      return"<button class=\"cal-ev-pill pill-"+catKey(ev.category)+"\" onclick=\"event.stopPropagation();showDetail(decEv(this.dataset.ev))\" data-ev=\""+esc(key)+"\">"+esc(ev.event_name||"Evento")+"</button>";
+      return"<button class='cal-ev-pill pill-"+catKey(ev.category)+"' onclick='event.stopPropagation();showDetail(decEv(this.dataset.ev))' data-ev='"+key+"'>"+esc(ev.event_name||"Evento")+"</button>";
     }).join("");
-    var extra=evs.length>2?"<div style=\"font-size:9px;color:var(--text-light);padding-left:2px\">+"+(evs.length-2)+"</div>":"";
-    h+="<div class=\"cal-cell"+(isT?" is-today":"")+"\"><div class=\"cal-date\">"+d+"</div>"+pills+extra+"</div>";
+    var extra=evs.length>2?"<div style='font-size:9px;color:var(--text-light);padding-left:2px'>+"+(evs.length-2)+"</div>":"";
+    h+="<div class='cal-cell"+(isT?" is-today":"")+"'><div class='cal-date'>"+d+"</div>"+pills+extra+"</div>";
   }
   var total=startDow+daysInM,rem=Math.ceil(total/7)*7-total;
-  for(var i=1;i<=rem;i++)h+="<div class=\"cal-cell other-month\"><div class=\"cal-date\">"+i+"</div></div>";
+  for(var i=1;i<=rem;i++)h+="<div class='cal-cell other-month'><div class='cal-date'>"+i+"</div></div>";
   document.getElementById("cal-grid").innerHTML=h;
 }
 
