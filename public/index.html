@@ -1,462 +1,444 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Eventi — Calendario Eventi | TattiOnline</title>
-<meta name="description" content="Scopri eventi locali. Naviga il calendario, filtra per categoria, trova cose da fare.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Maremma Live &mdash; Scopri gli eventi della Maremma Toscana</title>
+<meta name="description" content="Festival, musica, cibo, mercati e momenti indimenticabili in Maremma Toscana."/>
+<link rel="icon" href="/assets/logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-html{font-size:15px}
-body{background:#FAF7F2;color:#2D2A26;font-family:'Nunito',sans-serif}
-#root{min-height:100vh;display:flex;flex-direction:column}
-.fi{animation:fi .35s ease}
-@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#D4CFC7;border-radius:3px}
-img{max-width:100%;display:block}
-@media(max-width:768px){
-  html{font-size:13px}
-  .cal-layout{flex-direction:column !important}
-  .cal-grid-wrap{min-width:0 !important}
-  .side-panel{flex:1 !important;max-height:none !important;min-width:0 !important;border:none !important;border-top:1px solid #E8E4DD !important;border-radius:0 !important;box-shadow:none !important;padding:16px 0 !important}
-  .filter-chips{gap:4px !important}
-  .chip-btn{padding:4px 8px !important;font-size:11px !important}
-  .hdr-top{flex-direction:column !important;align-items:flex-start !important}
-  .hdr-act{width:100%;justify-content:space-between !important}
-  .month-label{font-size:20px !important}
-  .card-img{height:120px !important}
-  .cal-cell{width:calc((100vw - 42px) / 7) !important;min-height:calc((100vw - 42px) / 7) !important;padding:3px !important}
-  .cell-num{font-size:11px !important;font-weight:700 !important}
-  .day-hdr{font-size:9px !important;padding:6px 0 !important;letter-spacing:0 !important}
-  .cell-evt{display:none !important}
-  .cell-dots-mobile{display:flex !important;gap:2px !important;flex-wrap:wrap !important}
-  .today-bdg{display:none !important}
-  .main-area{padding:0 8px 16px !important}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--green-dark:#1a3d2b;--green-mid:#2d7d5a;--cream:#f5f0e8;--cream-dark:#e8e1d4;--text-dark:#1a1a1a;--text-mid:#4a5568;--text-light:#718096;--r-sm:6px;--r-md:10px;--r-lg:16px}
+html{font-size:15px}body{font-family:"DM Sans",sans-serif;background:var(--cream);color:var(--text-dark);line-height:1.5}
+img{display:block;max-width:100%}button{font-family:"DM Sans",sans-serif}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--cream-dark);border-radius:2px}
+.announce-bar{background:var(--green-dark);color:#fff;padding:9px 24px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.announce-bar span{flex:1;text-align:center}.auth-btns{display:flex;gap:8px;flex-shrink:0}
+.btn-o{border:1.5px solid rgba(255,255,255,0.6);color:#fff;background:transparent;padding:5px 14px;border-radius:var(--r-sm);font-size:12.5px;cursor:pointer}
+.btn-f{border:1.5px solid #fff;color:var(--green-dark);background:#fff;padding:5px 14px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;cursor:pointer}
+header{background:#fff;border-bottom:1px solid var(--cream-dark);padding:0 28px;display:flex;align-items:center;height:62px;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,0.05)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text-dark);flex-shrink:0}
+.logo img{height:44px;width:auto;object-fit:contain}.logo-text{line-height:1.15}
+.logo-name{font-family:"Playfair Display",serif;font-weight:700;font-size:17px;color:var(--green-dark);display:block}
+.logo-sub{font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-light);display:block}
+nav{display:flex;align-items:center;gap:2px;margin-left:12px}
+.nav-btn{padding:6px 13px;border-radius:var(--r-sm);font-size:13.5px;font-weight:500;border:none;background:transparent;cursor:pointer;color:var(--text-mid);transition:all 0.15s}
+.nav-btn:hover{background:var(--cream);color:var(--text-dark)}.nav-btn.active{background:var(--green-dark);color:#fff}
+.nav-btn.disabled{opacity:0.4;cursor:not-allowed}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{width:34px;height:34px;border:none;background:transparent;cursor:pointer;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--text-mid);font-size:16px;transition:background 0.15s}
+.icon-btn:hover{background:var(--cream)}
+.lang-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);background:#fff;font-size:12.5px;font-weight:500;cursor:pointer}
+.hero{background:var(--cream);padding:28px 28px 0;display:grid;grid-template-columns:1fr 400px;gap:24px;align-items:start}
+.hero-left{padding:12px 0;max-width:380px}
+.hero-tagline{font-family:"Playfair Display",serif;font-size:50px;font-weight:900;line-height:1.04;color:var(--green-dark);margin-bottom:14px}
+.hero-sub{font-size:15.5px;color:var(--text-mid);margin-bottom:24px;line-height:1.65}
+.search-bar{display:flex;background:#fff;border:1.5px solid var(--cream-dark);border-radius:var(--r-md);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.07)}
+.search-input{flex:1;border:none;outline:none;padding:12px 16px;font-size:13.5px;font-family:"DM Sans",sans-serif;background:transparent}
+.search-btn{background:transparent;border:none;padding:12px 16px;cursor:pointer;color:var(--text-mid);font-size:13px;font-weight:500;border-left:1px solid var(--cream-dark);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.hero-right{display:flex;flex-direction:column;gap:14px;padding-top:4px}
+.hero-map-wrap{border-radius:var(--r-lg);overflow:hidden;height:248px;box-shadow:0 4px 20px rgba(0,0,0,0.12)}
+.hero-map-wrap img{width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.sponsor-card{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);padding:18px}
+.sponsor-label{font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:6px}
+.sponsor-title{font-family:"Playfair Display",serif;font-size:15px;font-weight:700;color:var(--text-dark);margin-bottom:12px;line-height:1.25}
+.sponsor-btn{display:inline-block;padding:7px 16px;border:1.5px solid var(--text-dark);border-radius:var(--r-sm);font-size:12.5px;font-weight:500;cursor:pointer;background:transparent;transition:all 0.2s}
+.sponsor-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.main-wrap{padding:0 28px 48px;display:grid;grid-template-columns:1fr 216px;gap:22px;align-items:start;margin-top:26px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;color:var(--text-dark)}
+.view-all{font-size:12.5px;color:var(--green-mid);cursor:pointer;font-weight:500;border:none;background:transparent}
+.featured-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.featured-scroll::-webkit-scrollbar{display:none}
+.ev-card{flex-shrink:0;width:142px;cursor:pointer;transition:transform 0.18s}
+.ev-card:hover{transform:translateY(-3px)}
+.ev-card-img{width:142px;height:126px;border-radius:var(--r-md);background:var(--cream-dark);overflow:hidden;position:relative;margin-bottom:7px}
+.ev-card-img img{width:100%;height:100%;object-fit:cover}
+.ev-img-ph{width:100%;height:100%;background:linear-gradient(135deg,#c8dfc8,#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:30px}
+.ev-date-badge{position:absolute;bottom:7px;left:7px;background:rgba(0,0,0,0.68);color:#fff;border-radius:5px;padding:3px 7px;font-size:10px;font-weight:600;line-height:1.1}
+.ev-date-badge .day{font-size:15px;display:block}
+.cat-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px}
+.c-festival{background:#fde8cc;color:#954e00}.c-music{background:#e8d5f5;color:#5c1a9e}
+.c-market{background:#cce8f5;color:#02628a}.c-food{background:#d5f5e3;color:#126b33}
+.c-wellness{background:#fce8e8;color:#b01030}.c-culture{background:#e8e8d5;color:#5a6600}
+.c-sport{background:#e8eeff;color:#1840c4}.c-other{background:#e8e8e8;color:#555}
+.ev-card-name{font-size:12.5px;font-weight:600;color:var(--text-dark);margin-bottom:3px;line-height:1.3}
+.ev-card-loc{font-size:11.5px;color:var(--text-light)}
+.cal-wrap{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);padding:20px;margin-top:26px}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-nav-btn{width:29px;height:29px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);background:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;color:var(--text-mid)}
+.cal-nav-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.cal-month-label{font-family:"Playfair Display",serif;font-size:17px;font-weight:700;color:var(--text-dark)}
+.today-btn{padding:4px 12px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);background:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s}
+.today-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--cream-dark);border:1px solid var(--cream-dark);border-radius:var(--r-sm);overflow:hidden}
+.cal-day-hdr{background:var(--cream);text-align:center;padding:7px 2px;font-size:10.5px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.04em}
+.cal-cell{background:#fff;min-height:68px;padding:5px 4px;cursor:pointer;transition:background 0.12s}
+.cal-cell:hover{background:#f9f5ee}.cal-cell.other-month .cal-date{color:#ccc}
+.cal-cell.is-today{background:#eaf5ee}
+.cal-cell.is-today .cal-date{background:var(--green-mid);color:#fff;border-radius:50%;width:21px;height:21px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.cal-date{font-size:12.5px;font-weight:500;color:var(--text-dark);margin-bottom:3px;width:21px;height:21px;display:flex;align-items:center;justify-content:center}
+.cal-ev-pill{font-size:9.5px;padding:1px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:500;margin-bottom:1px;max-width:100%;border:none;text-align:left;display:block;width:100%}
+.pill-festival{background:#fde8cc;color:#954e00}.pill-music{background:#e8d5f5;color:#5c1a9e}
+.pill-market{background:#cce8f5;color:#02628a}.pill-food{background:#d5f5e3;color:#126b33}
+.pill-wellness{background:#fce8e8;color:#b01030}.pill-culture{background:#e8e8d5;color:#5a6600}
+.pill-sport,.pill-other{background:#e8e8e8;color:#555}
+.sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:74px}
+.detail-card{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);overflow:hidden}
+.detail-img-wrap{height:124px;overflow:hidden;background:linear-gradient(135deg,var(--cream-dark),#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:36px}
+.detail-img-wrap img{width:100%;height:124px;object-fit:cover}
+.detail-body{padding:14px}
+.detail-title{font-family:"Playfair Display",serif;font-size:14px;font-weight:700;color:var(--text-dark);margin:7px 0 10px;line-height:1.3}
+.detail-row{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;font-size:12px;color:var(--text-mid);line-height:1.4}
+.detail-row svg{flex-shrink:0;margin-top:1px}
+.detail-actions{display:flex;gap:7px;margin-top:12px}
+.btn-primary{flex:1;background:var(--green-dark);color:#fff;border:none;padding:9px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;cursor:pointer}
+.btn-primary:hover{background:#0f2b1d}
+.btn-icon{width:34px;height:34px;border:1.5px solid var(--cream-dark);border-radius:var(--r-sm);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid);font-size:14px}
+.btn-icon:hover{border-color:var(--green-mid);color:var(--green-mid)}
+.banner{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);overflow:hidden;margin-top:26px;display:grid;grid-template-columns:1fr 200px;align-items:stretch}
+.banner-body{padding:26px 30px}
+.banner-label{font-size:10px;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-light);margin-bottom:5px}
+.banner-title{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;color:var(--text-dark);margin-bottom:5px}
+.banner-sub{font-size:13px;color:var(--text-mid);margin-bottom:14px}
+.btn-green{background:var(--green-dark);color:#fff;border:none;padding:10px 20px;border-radius:var(--r-sm);font-size:13.5px;font-weight:600;cursor:pointer}
+.btn-green:hover{background:#0f2b1d}
+.banner-pic{background:linear-gradient(135deg,#7ab898,#c4d9b0,#e8d4a0);display:flex;align-items:center;justify-content:center;font-size:56px}
+.nl-section{padding:0 28px;margin-bottom:0}
+.newsletter{background:var(--green-dark);border-radius:var(--r-lg);padding:36px 44px;display:grid;grid-template-columns:80px 1fr;gap:28px;align-items:center}
+.nl-logo{width:72px;height:72px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.85}
+.nl-title{font-family:"Playfair Display",serif;font-size:24px;font-weight:700;color:#fff;margin-bottom:6px}
+.nl-sub{font-size:13.5px;color:rgba(255,255,255,0.72);line-height:1.55;margin-bottom:14px}
+.nl-form{display:flex;gap:8px}
+.nl-input{flex:1;padding:11px 15px;border-radius:var(--r-sm);border:none;outline:none;font-family:"DM Sans",sans-serif;font-size:13.5px;background:rgba(255,255,255,0.14);color:#fff}
+.nl-input::placeholder{color:rgba(255,255,255,0.45)}
+.nl-btn{padding:11px 22px;background:#fff;color:var(--green-dark);border:none;border-radius:var(--r-sm);font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.nl-spam{font-size:11.5px;color:rgba(255,255,255,0.38);margin-top:8px}
+footer{background:#fff;border-top:1px solid var(--cream-dark);padding:38px 28px 20px;margin-top:28px}
+.foot-grid{display:grid;grid-template-columns:210px 1fr 1fr 1fr;gap:28px;margin-bottom:28px}
+.foot-brand-logo{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.foot-brand-logo img{height:36px;object-fit:contain}
+.foot-brand-name{font-family:"Playfair Display",serif;font-weight:700;font-size:15px;color:var(--green-dark)}
+.foot-brand p{font-size:12.5px;color:var(--text-light);margin-bottom:14px;line-height:1.55}
+.foot-social{display:flex;gap:8px}
+.soc-btn{width:30px;height:30px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--text-mid);cursor:pointer;font-size:12px;transition:all 0.15s;text-decoration:none;background:#fff}
+.soc-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.foot-col h4{font-size:12.5px;font-weight:600;color:var(--text-dark);margin-bottom:10px}
+.foot-col a{display:block;font-size:12.5px;color:var(--text-light);margin-bottom:6px;text-decoration:none;transition:color 0.15s}
+.foot-col a:hover{color:var(--green-mid)}
+.foot-contact{font-size:12.5px;color:var(--text-light);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.foot-bottom{display:flex;justify-content:space-between;border-top:1px solid var(--cream-dark);padding-top:16px;font-size:11.5px;color:var(--text-light)}
+.loading{display:flex;align-items:center;justify-content:center;padding:32px;color:var(--text-light);font-size:13.5px;gap:8px}
+.spin{width:16px;height:16px;border:2px solid var(--cream-dark);border-top-color:var(--green-mid);border-radius:50%;animation:sp 0.8s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;padding-bottom:20px}.hero-right{display:none}
+  .main-wrap{grid-template-columns:1fr}.sidebar{position:static;display:none}
+  .foot-grid{grid-template-columns:1fr 1fr;gap:20px}
+  .newsletter{grid-template-columns:1fr;padding:28px 24px}.nl-logo{display:none}
+  .banner{grid-template-columns:1fr}.banner-pic{display:none}
+}
+@media(max-width:600px){
+  .announce-bar .auth-btns{display:none}
+  header{padding:0 16px}
+  nav .nav-btn:nth-child(n+5){display:none}
+  .hero{padding:20px 16px 0}.hero-tagline{font-size:38px}
+  .main-wrap{padding:0 16px 32px}.nl-section{padding:0 16px}
+  footer{padding:28px 16px 16px}.foot-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script type="text/babel">
-const{useState,useMemo,useEffect,useCallback}=React;
 
-const API_URL='/api/events';
+<div class="announce-bar">
+  <span>Fai tua la Maremma. Registrati per personalizzare il tuo calendario, caricare eventi e non perderti nulla.</span>
+  <div class="auth-btns">
+    <button class="btn-o">Accedi</button>
+    <button class="btn-f">Registrati</button>
+  </div>
+</div>
 
-/* ═══════════ i18n ═══════════ */
-const T={
-  it:{
-    title:"Eventi",tagline:"Calendario Eventi della Comunità",
-    calendar:"Calendario",list:"Lista",today:"Oggi",
-    search:"Cerca eventi, luoghi…",all:"Tutti",free:"Gratis",paid:"A pagamento",
-    upcoming:"In programma a",noEventsDay:"Nessun evento in questo giorno",noEventsMonth:"Nessun evento questo mese",noMatch:"Nessun evento corrisponde ai filtri",
-    back:"← Indietro",date:"Data",time:"Ora",venue:"Luogo",address:"Indirizzo",organizer:"Organizzatore",price:"Prezzo",language:"Lingua",phone:"Telefono",freeLabel:"Gratuito!",sponsored:"Sponsorizzato",
-    events:"eventi",loading:"Caricamento eventi…",sampleData:"Dati di esempio",
-    months:["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"],
-    monthsS:["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"],
-    days:["Lun","Mar","Mer","Gio","Ven","Sab","Dom"],
-  },
-  en:{
-    title:"Eventi",tagline:"Community Event Calendar",
-    calendar:"Calendar",list:"List",today:"Today",
-    search:"Search events, venues…",all:"All",free:"Free",paid:"Paid",
-    upcoming:"Upcoming in",noEventsDay:"No events on this day",noEventsMonth:"No events this month",noMatch:"No events match your filters",
-    back:"← Back",date:"Date",time:"Time",venue:"Venue",address:"Address",organizer:"Organizer",price:"Price",language:"Language",phone:"Phone",freeLabel:"Free!",sponsored:"Sponsored",
-    events:"events",loading:"Loading events…",sampleData:"Sample data",
-    months:["January","February","March","April","May","June","July","August","September","October","November","December"],
-    monthsS:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-    days:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
-  }
-};
+<header>
+  <a class="logo" href="/">
+    <img src="/assets/logo.png" alt="Maremma Live"/>
+    <div class="logo-text">
+      <span class="logo-name">Maremma Live</span>
+      <span class="logo-sub">Scopri gli eventi della Maremma Toscana</span>
+    </div>
+  </a>
+  <nav>
+    <button class="nav-btn active">&#128197; Calendario</button>
+    <button class="nav-btn">Lista</button>
+    <button class="nav-btn disabled" title="Disponibile presto">Mappa</button>
+    <button class="nav-btn">Esplora</button>
+    <button class="nav-btn" onclick="goToday()">Oggi</button>
+  </nav>
+  <div class="header-right">
+    <button class="icon-btn" title="Preferiti">&#9825;</button>
+    <button class="icon-btn" title="Profilo">&#128100;</button>
+    <button class="lang-btn">&#127470;&#127481; ITA &#9662;</button>
+  </div>
+</header>
 
-/* ═══════════ CATEGORIES ═══════════ */
-const CAT_STYLE={
-  Music:{bg:"#FDE8F0",fg:"#C2185B",icon:"🎵"},
-  Food:{bg:"#FFF3E0",fg:"#E65100",icon:"🍽"},
-  Art:{bg:"#E8EAF6",fg:"#283593",icon:"🎨"},
-  Sport:{bg:"#E8F5E9",fg:"#2E7D32",icon:"⚽"},
-  Community:{bg:"#F3E5F5",fg:"#6A1B9A",icon:"🤝"},
-  Workshop:{bg:"#E0F7FA",fg:"#00695C",icon:"🔧"},
-  Market:{bg:"#FFF8E1",fg:"#F57F17",icon:"🛍"},
-  Wellness:{bg:"#E8F5E9",fg:"#1B5E20",icon:"🧘"},
-  Culture:{bg:"#EDE7F6",fg:"#4527A0",icon:"📚"},
-  Theatre:{bg:"#FCE4EC",fg:"#880E4F",icon:"🎭"},
-  Cinema:{bg:"#EFEBE9",fg:"#4E342E",icon:"🎬"},
-  Festival:{bg:"#FFF3E0",fg:"#BF360C",icon:"🎪"},
-  Ambiente:{bg:"#E8F5E9",fg:"#33691E",icon:"🌿"},
-  Environment:{bg:"#E8F5E9",fg:"#33691E",icon:"🌿"},
-  "Presentazione libro":{bg:"#E8EAF6",fg:"#1A237E",icon:"📖"},
-};
-const DEF_CAT={bg:"#F5F5F5",fg:"#616161",icon:"📌"};
-function gc(c){return CAT_STYLE[c]||DEF_CAT}
+<section class="hero">
+  <div class="hero-left">
+    <h1 class="hero-tagline">Live local.<br>Feel Tuscany.</h1>
+    <p class="hero-sub">Festival, musica, cibo, mercati<br>&amp; momenti indimenticabili.</p>
+    <div class="search-bar">
+      <input class="search-input" id="search-input" type="text" placeholder="Cerca eventi, luoghi, categorie..." oninput="filterEvents()"/>
+      <button class="search-btn">&#9881; Filtri</button>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-map-wrap">
+      <img src="/assets/map-maremma.png" alt="Mappa della Maremma Toscana"/>
+    </div>
+    <div class="sponsor-card">
+      <div class="sponsor-label">Sponsor</div>
+      <div class="sponsor-title">Discover the authentic Maremma</div>
+      <button class="sponsor-btn">Learn more</button>
+    </div>
+  </div>
+</section>
 
-/* ═══════════ HELPERS ═══════════ */
-function isFree(p){return !p||/free|gratis|gratuito|^0$|^€0$/i.test(p)}
-function dim(y,m){return new Date(y,m+1,0).getDate()}
-function fdow(y,m){const d=new Date(y,m,1).getDay();return d===0?6:d-1}
-function fmt(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
-function ds(s){return(s||'').slice(0,10)}
-
-/* ═══════════ APP ═══════════ */
-function App(){
-  const now=new Date();
-  const[lang,setLang]=useState(()=>(/^en/i.test(navigator.language)?'en':'it'));
-  const t=T[lang];
-  const[events,setEvents]=useState([]);
-  const[loading,setLoading]=useState(true);
-  const[error,setError]=useState(null);
-  const[month,setMonth]=useState(now.getMonth());
-  const[year,setYear]=useState(now.getFullYear());
-  const[selDate,setSelDate]=useState(null);
-  const[selEvent,setSelEvent]=useState(null);
-  const[catF,setCatF]=useState("All");
-  const[priceF,setPriceF]=useState("All");
-  const[search,setSearch]=useState("");
-  const[view,setView]=useState("cal");
-
-  const fetchEvents=useCallback(async()=>{
-    setLoading(true);setError(null);
-    try{
-      const r=await fetch(API_URL);
-      if(!r.ok)throw new Error(`Error ${r.status}`);
-      const d=await r.json();
-      if(d.error)throw new Error(d.error);
-      setEvents(d.events||[]);
-    }catch(e){
-      setError(e.message);
-      setEvents([
-        {id:"s1",event_name:"Jazz al Tramonto",date_start:"2026-05-18",time_start:"21:00",location_name:"Blue Note Milano",category:"Music",price:"€25",description:"Live jazz quartet.",is_sponsored:false},
-        {id:"s2",event_name:"Street Food Festival",date_start:"2026-05-20",date_end:"2026-05-22",time_start:"11:00",location_name:"Darsena",category:"Food",price:"Free",description:"International street food.",is_sponsored:true},
-        {id:"s3",event_name:"Yoga al Parco",date_start:"2026-05-24",time_start:"08:00",location_name:"Parco Sempione",category:"Sport",price:"Free",is_sponsored:false},
-      ]);
-    }
-    setLoading(false);
-  },[]);
-
-  useEffect(()=>{fetchEvents()},[fetchEvents]);
-
-  const categories=useMemo(()=>{
-    const c=new Set(events.map(e=>e.category).filter(Boolean));
-    return["All",...Array.from(c).sort()];
-  },[events]);
-
-  const filtered=useMemo(()=>{
-    return events.filter(e=>{
-      if(catF!=="All"&&e.category!==catF)return false;
-      if(priceF==="Free"&&!isFree(e.price))return false;
-      if(priceF==="Paid"&&isFree(e.price))return false;
-      if(search){const s=search.toLowerCase();if(!e.event_name.toLowerCase().includes(s)&&!(e.location_name||'').toLowerCase().includes(s)&&!(e.organizer||'').toLowerCase().includes(s))return false}
-      return true;
-    });
-  },[events,catF,priceF,search]);
-
-  const monthEvts=useMemo(()=>{
-    return filtered.filter(e=>{
-      const s=new Date(ds(e.date_start)+'T12:00:00');
-      const end=e.date_end?new Date(ds(e.date_end)+'T12:00:00'):s;
-      return s<=new Date(year,month+1,0,23,59)&&end>=new Date(year,month,1);
-    }).sort((a,b)=>a.date_start.localeCompare(b.date_start));
-  },[filtered,year,month]);
-
-  function onDate(d){return filtered.filter(e=>{const s=ds(e.date_start),end=ds(e.date_end)||s;return s<=d&&d<=end})}
-
-  const nDays=dim(year,month),fd=fdow(year,month);
-  const cells=[];
-  for(let i=0;i<fd;i++)cells.push(null);
-  for(let d=1;d<=nDays;d++)cells.push(d);
-  while(cells.length%7)cells.push(null);
-
-  const todayStr=fmt(now.getFullYear(),now.getMonth(),now.getDate());
-
-  function prev(){if(month===0){setMonth(11);setYear(y=>y-1)}else setMonth(m=>m-1);setSelDate(null);setSelEvent(null)}
-  function next(){if(month===11){setMonth(0);setYear(y=>y+1)}else setMonth(m=>m+1);setSelDate(null);setSelEvent(null)}
-
-  const dateFmt=lang==='it'?'it-IT':'en-GB';
-
-  const[filterOpen,setFilterOpen]=useState(false);
-  const activeFilters=(catF!=="All"?1:0)+(priceF!=="All"?1:0);
-
-  return(
-  <div style={S.root}>
-    {/* HEADER */}
-    <header style={S.hdr}>
-      <div className="hdr-top" style={S.hdrTop}>
-        <div>
-          <h1 style={S.logo}>📅 <span style={S.logoTxt}>{t.title}</span></h1>
-          <p style={S.tag}>{t.tagline}</p>
+<div class="main-wrap">
+  <div class="main-col">
+    <div class="section-header">
+      <h2 class="section-title">Featured events</h2>
+      <button class="view-all">View all events &#8250;</button>
+    </div>
+    <div class="featured-scroll" id="featured-scroll">
+      <div class="loading"><div class="spin"></div> Caricamento eventi...</div>
+    </div>
+    <div class="cal-wrap">
+      <div class="cal-hdr">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+          <span class="cal-month-label" id="cal-label"></span>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
         </div>
-        <div className="hdr-act" style={S.hdrAct}>
-          <button style={{...S.vBtn,...(view==="cal"?S.vBtnA:{})}} onClick={()=>setView("cal")}>📅 {t.calendar}</button>
-          <button style={{...S.vBtn,...(view==="list"?S.vBtnA:{})}} onClick={()=>setView("list")}>📋 {t.list}</button>
-          <button style={S.tBtn} onClick={()=>{setMonth(now.getMonth());setYear(now.getFullYear());setSelDate(todayStr);setSelEvent(null)}}>{t.today}</button>
-          <button style={S.langBtn} onClick={()=>setLang(l=>l==='it'?'en':'it')} title="Switch language">
-            {lang==='it'?'🇬🇧 EN':'🇮🇹 IT'}
-          </button>
-        </div>
+        <button class="today-btn" onclick="goToday()">Oggi</button>
       </div>
-      {/* Search + Filter button */}
-      <div style={S.fRow}>
-        <div style={S.searchRow}>
-          <div style={S.sWrap}>
-            <span style={S.sIco}>🔍</span>
-            <input style={S.sIn} placeholder={t.search} value={search} onChange={e=>setSearch(e.target.value)}/>
-            {search&&<button style={S.sClear} onClick={()=>setSearch('')}>✕</button>}
-          </div>
-          <button style={{...S.filterBtn,...(filterOpen||activeFilters>0?S.filterBtnActive:{})}} onClick={()=>setFilterOpen(o=>!o)}>
-            ☰ {lang==='it'?'Filtri':'Filters'}{activeFilters>0?` (${activeFilters})`:''}
-          </button>
-        </div>
-        {/* Filter dropdown */}
-        {filterOpen&&(
-          <div style={S.filterDropdown}>
-            <div style={S.filterSection}>
-              <p style={S.filterSectionLabel}>{lang==='it'?'Categoria':'Category'}</p>
-              <div style={S.filterChipsWrap}>
-                {categories.map(c=>{const cs=gc(c);const a=catF===c;return(
-                  <button key={c} onClick={()=>{setCatF(c);}} style={{...S.chip,...(a?{background:c==="All"?"#2D2A26":cs.fg,color:"#fff",borderColor:"transparent"}:{})}}>{c!=="All"&&cs.icon?cs.icon+" ":""}{c==="All"?t.all:c}</button>
-                )})}
-              </div>
-            </div>
-            <div style={S.filterSection}>
-              <p style={S.filterSectionLabel}>{lang==='it'?'Prezzo':'Price'}</p>
-              <div style={S.filterChipsWrap}>
-                <button onClick={()=>setPriceF("All")} style={{...S.chip,...(priceF==="All"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{t.all}</button>
-                <button onClick={()=>setPriceF("Free")} style={{...S.chip,...(priceF==="Free"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{lang==='it'?'🆓 Gratis':'🆓 Free'}</button>
-                <button onClick={()=>setPriceF("Paid")} style={{...S.chip,...(priceF==="Paid"?{background:"#2D2A26",color:"#fff",borderColor:"transparent"}:{})}}>{lang==='it'?'💶 A pagamento':'💶 Paid'}</button>
-              </div>
-            </div>
-            <button style={S.filterClose} onClick={()=>setFilterOpen(false)}>{lang==='it'?'Chiudi ✕':'Close ✕'}</button>
-          </div>
-        )}
+      <div class="cal-grid" id="cal-grid">
+        <div class="loading" style="grid-column:1/-1"><div class="spin"></div></div>
       </div>
-    </header>
+    </div>
+    <div class="banner">
+      <div class="banner-body">
+        <div class="banner-label">Sponsor</div>
+        <div class="banner-title">Taste the real Tuscany</div>
+        <div class="banner-sub">Prodotti locali, sapori indimenticabili.</div>
+        <button class="btn-green">Esplora</button>
+      </div>
+      <div class="banner-pic">&#127807;</div>
+    </div>
+  </div>
+  <aside class="sidebar">
+    <div class="detail-card" id="event-detail">
+      <div class="detail-img-wrap">&#128197;</div>
+      <div class="detail-body">
+        <span class="cat-pill c-other">Seleziona un evento</span>
+        <div class="detail-title">Clicca su un evento nel calendario per vedere i dettagli</div>
+      </div>
+    </div>
+    <div class="sponsor-card">
+      <div class="sponsor-label">Sponsor</div>
+      <div class="sponsor-title">Stay in the heart of Maremma</div>
+      <button class="sponsor-btn">Book your stay</button>
+    </div>
+  </aside>
+</div>
 
-    {loading&&<div style={S.stat}>⏳ {t.loading}</div>}
-    {error&&<div style={{...S.stat,background:"#FFF3E0",color:"#E65100"}}>⚠️ {t.sampleData}</div>}
-
-    {/* SEARCH RESULTS — shows across all months when search is active */}
-    {search&&<div style={S.searchResults}>
-      <div style={S.searchResultsHdr}>
-        <span style={S.searchResultsTitle}>🔍 {filtered.length} {lang==='it'?'risultati per':'results for'} "<strong>{search}</strong>"</span>
-        <button style={S.searchClearBtn} onClick={()=>setSearch('')}>{lang==='it'?'Cancella':'Clear'} ✕</button>
+<div class="nl-section">
+  <div class="newsletter">
+    <img src="/assets/logo.png" class="nl-logo" alt="Maremma Live"/>
+    <div>
+      <div class="nl-title">Stay in the know</div>
+      <div class="nl-sub">Iscriviti e non perdere eventi, storie e ispirazione locale dalla Maremma.</div>
+      <div class="nl-form">
+        <input class="nl-input" id="nl-email" type="email" placeholder="La tua email"/>
+        <button class="nl-btn" onclick="subscribeNewsletter()">Iscriviti</button>
       </div>
-      {filtered.length===0
-        ? <div style={S.emSt}><span style={{fontSize:36}}>🔍</span><p>{t.noMatch}</p></div>
-        : filtered.sort((a,b)=>a.date_start.localeCompare(b.date_start)).map(ev=>(
-            <Card key={ev.id} ev={ev} wide onClick={()=>{setSelEvent(ev);setSearch('');setMonth(new Date(ds(ev.date_start)+'T12:00:00').getMonth());setYear(new Date(ds(ev.date_start)+'T12:00:00').getFullYear())}} t={t}/>
-          ))
+      <div class="nl-spam">Nessuno spam, cancellati in qualsiasi momento.</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <div class="foot-brand">
+      <div class="foot-brand-logo">
+        <img src="/assets/logo.png" alt="Maremma Live"/>
+        <span class="foot-brand-name">Maremma Live</span>
+      </div>
+      <p>La tua guida ai migliori eventi, luoghi ed esperienze della Maremma Toscana.</p>
+      <div class="foot-social">
+        <a class="soc-btn" href="#" title="Facebook">f</a>
+        <a class="soc-btn" href="#" title="Instagram">in</a>
+        <a class="soc-btn" href="#" title="YouTube">yt</a>
+        <a class="soc-btn" href="#" title="Newsletter">&#9993;</a>
+      </div>
+    </div>
+    <div class="foot-col">
+      <h4>Esplora</h4>
+      <a href="#">Calendario eventi</a><a href="#">Lista</a><a href="#">Mappa</a>
+      <a href="#">Esplora</a><a href="#">Oggi</a>
+    </div>
+    <div class="foot-col">
+      <h4>Informazioni</h4>
+      <a href="#">Chi siamo</a><a href="#">Contatti</a><a href="#">Pubblicit&#224;</a>
+      <a href="#">Invia un evento</a><a href="#">Privacy Policy</a>
+      <a href="#">Termini e condizioni</a>
+    </div>
+    <div class="foot-col">
+      <h4>Contatti</h4>
+      <div class="foot-contact">&#128222; +39 0564 123456</div>
+      <div class="foot-contact">&#9993; info@maremmalive.it</div>
+      <div class="foot-contact">&#128205; Grosseto, Toscana, Italy</div>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>&#169; 2026 Maremma Live. All rights reserved.</span>
+    <span>Made with &#9829; in Maremma Toscana</span>
+  </div>
+</footer>
+
+<script>
+var API_URL="/api/events";
+var MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+var DAYS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+var allEvents=[],filteredEvents=[],curDate=new Date();
+
+function catKey(cat){
+  if(!cat)return"other";var c=cat.toLowerCase();
+  if(c.indexOf("festival")>=0)return"festival";
+  if(c.indexOf("music")>=0||c.indexOf("concert")>=0)return"music";
+  if(c.indexOf("market")>=0||c.indexOf("merca")>=0||c.indexOf("fiera")>=0)return"market";
+  if(c.indexOf("food")>=0||c.indexOf("cibo")>=0||c.indexOf("wine")>=0||c.indexOf("vino")>=0||c.indexOf("gastr")>=0)return"food";
+  if(c.indexOf("well")>=0||c.indexOf("benes")>=0||c.indexOf("yoga")>=0)return"wellness";
+  if(c.indexOf("cult")>=0||c.indexOf("arte")>=0||c.indexOf("teatro")>=0||c.indexOf("mostr")>=0)return"culture";
+  if(c.indexOf("sport")>=0)return"sport";
+  return"other";
+}
+function catLabel(cat){
+  var m={festival:"Festival",music:"Musica",market:"Mercato",food:"Food & Wine",wellness:"Wellness",culture:"Cultura",sport:"Sport",other:"Altro"};
+  return m[catKey(cat)]||cat||"Altro";
+}
+function fmtDate(s,e){
+  if(!s)return"\u2014";
+  var sd=new Date(s);
+  if(!e||e===s)return sd.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+  return new Date(s).toLocaleDateString("it-IT",{day:"numeric",month:"long"})+" \u2192 "+new Date(e).toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function encEv(ev){return encodeURIComponent(JSON.stringify(ev))}
+function decEv(s){return JSON.parse(decodeURIComponent(s))}
+
+function showDetail(ev){
+  var cat=catKey(ev.category);
+  var img=ev.flyer_image&&ev.flyer_image[0]?ev.flyer_image[0].url:"";
+  var price=ev.price?(String(ev.price)==="0"?"Gratuito":ev.price):"Gratuito";
+  var langs={it:"Italiano",en:"English",de:"Deutsch",fr:"Fran\u00e7ais"};
+  var lang=ev.language?langs[ev.language]||ev.language:"";
+  var h="<div class=\"detail-img-wrap\">"+(img?"<img src=\""+esc(img)+"\" loading=\"lazy\" alt=\""+esc(ev.event_name||"")+"\"/>":"&#127807;")+"</div>";
+  h+="<div class=\"detail-body\">";
+  h+="<span class=\"cat-pill c-"+cat+"\">"+catLabel(ev.category)+"</span>";
+  h+="<div class=\"detail-title\">"+esc(ev.event_name||"Evento")+"</div>";
+  h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><rect x=\"2\" y=\"3\" width=\"12\" height=\"12\" rx=\"2\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M5 1v3M11 1v3M2 7h12\" stroke=\"#718096\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
+  h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><path d=\"M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.5-2-4.5-4.5-4.5z\" stroke=\"#718096\" stroke-width=\"1.5\"/><circle cx=\"8\" cy=\"6\" r=\"1.5\" stroke=\"#718096\" stroke-width=\"1.5\"/></svg><span>"+esc(ev.location_name||ev.address||"\u2014")+"</span></div>";
+  if(ev.time_start)h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><circle cx=\"8\" cy=\"8\" r=\"6.5\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M8 5v3.5l2 1.5\" stroke=\"#718096\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><span>"+esc(ev.time_start)+"</span></div>";
+  h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><rect x=\"1.5\" y=\"4\" width=\"13\" height=\"10\" rx=\"2\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M5 4V2.5a1 1 0 012 0V4M9 4V2.5a1 1 0 012 0V4\" stroke=\"#718096\" stroke-width=\"1.5\" stroke-linecap=\"round\"/></svg><span>"+esc(price)+"</span></div>";
+  if(lang)h+="<div class=\"detail-row\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\"><circle cx=\"8\" cy=\"8\" r=\"6.5\" stroke=\"#718096\" stroke-width=\"1.5\"/><path d=\"M8 1.5S5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5S10.5 4 10.5 8 8 14.5 8 14.5M1.5 8h13\" stroke=\"#718096\" stroke-width=\"1.2\"/></svg><span>"+esc(lang)+"</span></div>";
+  h+="<div class=\"detail-actions\"><button class=\"btn-primary\">Vedi dettagli</button><button class=\"btn-icon\" title=\"Salva\">&#9825;</button><button class=\"btn-icon\" title=\"Condividi\">&#8599;</button></div>";
+  h+="</div>";
+  document.getElementById("event-detail").innerHTML=h;
+}
+
+function renderFeatured(){
+  var src=filteredEvents.filter(function(e){return e.is_featured||e.is_sponsored});
+  var list=(src.length?src:filteredEvents).slice(0,10);
+  var el=document.getElementById("featured-scroll");
+  if(!list.length){el.innerHTML="<div class=\"loading\">Nessun evento trovato</div>";return}
+  el.innerHTML=list.map(function(ev){
+    var cat=catKey(ev.category);
+    var d=ev.date_start?new Date(ev.date_start):null;
+    var img=ev.flyer_image&&ev.flyer_image[0]?ev.flyer_image[0].url:"";
+    var key=encEv(ev);
+    return"<div class=\"ev-card\" onclick=\"showDetail(decEv(this.dataset.ev))\" data-ev=\""+esc(key)+"\">"
+      +"<div class=\"ev-card-img\">"+(img?"<img src=\""+esc(img)+"\" alt=\""+esc(ev.event_name||"")+"\" loading=\"lazy\"/>":"<div class=\"ev-img-ph\">&#127807;</div>")
+      +(d?"<div class=\"ev-date-badge\"><span class=\"day\">"+d.getDate()+"</span>"+MONTHS[d.getMonth()].slice(0,3).toUpperCase()+"</div>":"")
+      +"</div><span class=\"cat-pill c-"+cat+"\">"+catLabel(ev.category)+"</span>"
+      +"<div class=\"ev-card-name\">"+esc(ev.event_name||"Evento")+"</div>"
+      +"<div class=\"ev-card-loc\">&#128205; "+esc(ev.location_name||ev.address||"\u2014")+"</div></div>";
+  }).join("");
+}
+
+function renderCalendar(){
+  var y=curDate.getFullYear(),m=curDate.getMonth();
+  document.getElementById("cal-label").textContent=MONTHS[m]+" "+y;
+  var today=new Date(),firstDow=new Date(y,m,1).getDay();
+  var startDow=firstDow===0?6:firstDow-1;
+  var daysInM=new Date(y,m+1,0).getDate(),daysInPrev=new Date(y,m,0).getDate();
+  var byDay={};
+  filteredEvents.forEach(function(ev){
+    if(!ev.date_start)return;
+    var start=new Date(ev.date_start),end=ev.date_end?new Date(ev.date_end):new Date(start);
+    for(var cur=new Date(start);cur<=end;cur.setDate(cur.getDate()+1)){
+      if(cur.getFullYear()===y&&cur.getMonth()===m){
+        var k=cur.getDate();if(!byDay[k])byDay[k]=[];
+        if(!byDay[k].find(function(e){return e.event_name===ev.event_name}))byDay[k].push(ev);
       }
-    </div>}
-
-    {/* CALENDAR */}
-    {!search&&view==="cal"&&<div className="main-area" style={S.mainA}>
-      <div style={S.mNav}><button style={S.arr} onClick={prev}>‹</button><h2 className="month-label" style={S.mLbl}>{t.months[month]} <span style={S.yLbl}>{year}</span></h2><button style={S.arr} onClick={next}>›</button></div>
-      <div className="cal-layout" style={S.calL}>
-        <div className="cal-grid-wrap" style={S.calGW}>
-          <div style={S.calG}>
-            {t.days.map(d=><div key={d} className="day-hdr" style={S.dH}>{d}</div>)}
-            {cells.map((day,i)=>{
-              if(!day)return <div key={'e'+i} style={S.eC}/>;
-              const d=fmt(year,month,day),de=onDate(d),isT=d===todayStr,isS=d===selDate,isW=((fd+day-1)%7)>=5;
-              return(
-                <div key={day} className="cal-cell" style={{...S.cl,...(isW?S.clW:{}),...(isT?S.clT:{}),...(isS?S.clS:{})}} onClick={()=>{setSelDate(d);setSelEvent(null)}}>
-                  <div style={S.clH}><span className="cell-num" style={{...S.clN,...(isT?S.clNT:{})}}>{day}</span>{isT&&<span className="today-bdg" style={S.tBdg}>{t.today.toLowerCase()}</span>}</div>
-                  <div style={S.clEv}>
-                    {de.slice(0,3).map((ev,j)=>{const cs=gc(ev.category);return(
-                      <div key={ev.id+'_'+j} className="cell-evt" style={{...S.cEv,background:cs.bg,color:cs.fg,borderLeft:'3px solid '+cs.fg}} onClick={e=>{e.stopPropagation();setSelDate(d);setSelEvent(ev)}} title={ev.event_name}>
-                        {ev.event_name}
-                      </div>
-                    )})}
-                    {de.length>3&&<div style={S.cMore}>+{de.length-3}</div>}
-                  </div>
-                  {/* Mobile dots fallback */}
-                  <div className="cell-dots-mobile" style={S.dotsM}>
-                    {de.slice(0,4).map((ev,j)=><span key={j} style={{...S.dotM,background:gc(ev.category).fg}}/>)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="side-panel" style={S.sP}>
-          {selEvent?<Detail ev={selEvent} onBack={()=>setSelEvent(null)} t={t} dateFmt={dateFmt}/>
-          :selDate?<div className="fi"><h3 style={S.sT}>{new Date(selDate+'T12:00:00').toLocaleDateString(dateFmt,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>{onDate(selDate).length===0?<div style={S.emSt}><span style={{fontSize:40}}>📭</span><p>{t.noEventsDay}</p></div>:onDate(selDate).map(ev=><Card key={ev.id} ev={ev} onClick={()=>setSelEvent(ev)} t={t}/>)}</div>
-          :<div className="fi"><h3 style={S.sT}>📋 {t.upcoming} {t.months[month]}</h3>{monthEvts.length===0?<div style={S.emSt}><span style={{fontSize:40}}>🗓</span><p>{t.noEventsMonth}</p></div>:monthEvts.map(ev=><Card key={ev.id} ev={ev} onClick={()=>{setSelEvent(ev);setSelDate(ds(ev.date_start))}} t={t}/>)}</div>}
-        </div>
-      </div>
-    </div>}
-
-    {/* LIST */}
-    {!search&&view==="list"&&<div style={S.listA}>
-      <div style={S.mNav}><button style={S.arr} onClick={prev}>‹</button><h2 className="month-label" style={S.mLbl}>{t.months[month]} <span style={S.yLbl}>{year}</span></h2><button style={S.arr} onClick={next}>›</button></div>
-      {monthEvts.length===0?<div style={S.emSt}><span style={{fontSize:48}}>🗓</span><p style={{fontSize:16}}>{t.noMatch}</p></div>
-      :monthEvts.map(ev=><Card key={ev.id} ev={ev} wide onClick={()=>setSelEvent(ev)} t={t}/>)}
-      {selEvent&&<div style={S.ovl} onClick={()=>setSelEvent(null)}><div style={S.mdl} onClick={e=>e.stopPropagation()}><Detail ev={selEvent} onBack={()=>setSelEvent(null)} t={t} dateFmt={dateFmt}/></div></div>}
-    </div>}
-
-    <footer style={S.ft}><span>tattionline.com</span><span>{events.length} {t.events}</span></footer>
-  </div>);
+    }
+  });
+  var h=DAYS.map(function(d){return"<div class=\"cal-day-hdr\">"+d+"</div>"}).join("");
+  for(var i=startDow-1;i>=0;i--)h+="<div class=\"cal-cell other-month\"><div class=\"cal-date\">"+(daysInPrev-i)+"</div></div>";
+  for(var d=1;d<=daysInM;d++){
+    var isT=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    var evs=byDay[d]||[];
+    var pills=evs.slice(0,2).map(function(ev){
+      var key=encEv(ev);
+      return"<button class=\"cal-ev-pill pill-"+catKey(ev.category)+"\" onclick=\"event.stopPropagation();showDetail(decEv(this.dataset.ev))\" data-ev=\""+esc(key)+"\">"+esc(ev.event_name||"Evento")+"</button>";
+    }).join("");
+    var extra=evs.length>2?"<div style=\"font-size:9px;color:var(--text-light);padding-left:2px\">+"+(evs.length-2)+"</div>":"";
+    h+="<div class=\"cal-cell"+(isT?" is-today":"")+"\"><div class=\"cal-date\">"+d+"</div>"+pills+extra+"</div>";
+  }
+  var total=startDow+daysInM,rem=Math.ceil(total/7)*7-total;
+  for(var i=1;i<=rem;i++)h+="<div class=\"cal-cell other-month\"><div class=\"cal-date\">"+i+"</div></div>";
+  document.getElementById("cal-grid").innerHTML=h;
 }
 
-/* ═══════════ CARD ═══════════ */
-function Card({ev,onClick,wide,t}){
-  const cs=gc(ev.category);const d=new Date(ds(ev.date_start)+'T12:00:00');
-  const hasEnd=ev.date_end&&ds(ev.date_end)!==ds(ev.date_start);
-  const MS=T[Object.keys(T).find(k=>T[k]===t)]?.monthsS||T.en.monthsS;
-  return(
-    <div style={{...S.card,...(wide?{maxWidth:'100%'}:{})}} onClick={onClick} className="fi">
-      {ev.flyer_thumb&&<div className="card-img" style={{...S.cardImg,backgroundImage:`url(${ev.flyer_thumb})`}}/>}
-      {!ev.flyer_thumb&&<div style={{...S.cardAc,background:cs.fg}}/>}
-      <div style={S.cardC}>
-        <div style={S.cardTop}>
-          <div style={{...S.catBdg,background:cs.bg,color:cs.fg}}>{cs.icon} {ev.category}</div>
-          {ev.is_sponsored&&<span style={S.spBdg}>⭐ {t.sponsored}</span>}
-          {isFree(ev.price)&&<span style={S.frBdg}>{t.free||'Free'}</span>}
-        </div>
-        <h4 style={S.cardNm}>{ev.event_name}</h4>
-        <div style={S.cardDt}>
-          <span style={S.cdl}>📅 {d.getDate()} {MS[d.getMonth()]}{hasEnd?' → '+ds(ev.date_end):''}</span>
-          {ev.time_start&&ev.time_start!=='00:00'&&<span style={S.cdl}>🕐 {ev.time_start}</span>}
-          {ev.location_name&&<span style={S.cdl}>📍 {ev.location_name}</span>}
-        </div>
-        {!isFree(ev.price)&&ev.price&&<div style={S.cardPr}>💶 {ev.price}</div>}
-      </div>
-    </div>
-  );
+function changeMonth(delta){curDate=new Date(curDate.getFullYear(),curDate.getMonth()+delta,1);renderCalendar()}
+function goToday(){curDate=new Date();renderCalendar()}
+function filterEvents(){
+  var q=document.getElementById("search-input").value.toLowerCase().trim();
+  filteredEvents=q?allEvents.filter(function(ev){
+    return(ev.event_name||"").toLowerCase().indexOf(q)>=0
+      ||(ev.location_name||"").toLowerCase().indexOf(q)>=0
+      ||(ev.category||"").toLowerCase().indexOf(q)>=0
+      ||(ev.description||"").toLowerCase().indexOf(q)>=0;
+  }):allEvents;
+  renderFeatured();renderCalendar();
 }
-
-/* ═══════════ DETAIL ═══════════ */
-function Detail({ev,onBack,t,dateFmt}){
-  const cs=gc(ev.category);const d=new Date(ds(ev.date_start)+'T12:00:00');
-  return(
-    <div className="fi" style={{animation:'slideIn .3s ease'}}>
-      <button style={S.bk} onClick={onBack}>{t.back}</button>
-      {/* Flyer image */}
-      {ev.flyer_image&&<div style={S.flyerWrap}><img src={ev.flyer_image} alt={ev.event_name} style={S.flyerImg}/></div>}
-      {/* Hero */}
-      <div style={{...S.dHero,background:`linear-gradient(135deg,${cs.bg},#fff)`}}>
-        {!ev.flyer_image&&<span style={{fontSize:48}}>{cs.icon}</span>}
-        <div style={{...S.dCatB,background:cs.fg,color:'#fff'}}>{ev.category}</div>
-        <h2 style={S.dTtl}>{ev.event_name}</h2>
-        {ev.is_sponsored&&<span style={S.spBdg}>⭐ {t.sponsored}</span>}
-      </div>
-      {/* Info */}
-      <div style={S.dInfo}>
-        <IR i="📅" l={t.date} v={d.toLocaleDateString(dateFmt,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+(ev.date_end&&ds(ev.date_end)!==ds(ev.date_start)?' → '+ds(ev.date_end):'')}/>
-        {ev.time_start&&ev.time_start!=='00:00'&&<IR i="🕐" l={t.time} v={ev.time_start}/>}
-        {ev.location_name&&<IR i="📍" l={t.venue} v={ev.location_name}/>}
-        {ev.address&&<IR i="🗺️" l={t.address} v={ev.address}/>}
-        {ev.organizer&&<IR i="👤" l={t.organizer} v={ev.organizer}/>}
-        <IR i="💶" l={t.price} v={isFree(ev.price)?t.freeLabel:ev.price}/>
-        {ev.language&&<IR i="🌐" l={t.language} v={ev.language}/>}
-        {ev.phone&&<IR i="📞" l={t.phone} v={ev.phone}/>}
-      </div>
-      {ev.description&&<div style={S.dDesc}><p style={S.dDTxt}>{ev.description}</p></div>}
-    </div>
-  );
+function subscribeNewsletter(){
+  var email=document.getElementById("nl-email").value.trim();
+  if(!email||email.indexOf("@")<0){alert("Inserisci un indirizzo email valido.");return}
+  alert("Grazie per l'iscrizione!");
+  document.getElementById("nl-email").value="";
 }
-function IR({i,l,v}){return <div style={S.ir}><span style={S.irI}>{i}</span><span style={S.irL}>{l}</span><span style={S.irV}>{v}</span></div>}
-
-/* ═══════════ STYLES ═══════════ */
-const S={
-  root:{fontFamily:"'Nunito',sans-serif",background:"#FAF7F2",color:"#2D2A26",minHeight:"100vh",display:"flex",flexDirection:"column"},
-  hdr:{background:"#fff",borderBottom:"1px solid #E8E4DD",padding:"14px 20px 10px",position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 8px rgba(0,0,0,.04)"},
-  hdrTop:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10,marginBottom:10},
-  logo:{fontSize:26,margin:0,display:"flex",alignItems:"center",gap:8},
-  logoTxt:{fontFamily:"'Playfair Display',serif",fontWeight:700,color:"#2D2A26"},
-  tag:{fontSize:11,color:"#8C8578",letterSpacing:1.5,textTransform:"uppercase",marginTop:2},
-  hdrAct:{display:"flex",gap:5,flexWrap:"wrap"},
-  vBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"7px 14px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:600,transition:"all .15s"},
-  vBtnA:{background:"#2D2A26",color:"#fff",borderColor:"#2D2A26"},
-  tBtn:{background:"#E8F5E9",border:"1px solid #A5D6A7",color:"#2E7D32",padding:"7px 14px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:700},
-  langBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"7px 12px",borderRadius:20,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:700,transition:"all .15s"},
-  fRow:{},
-  searchRow:{display:"flex",gap:8,alignItems:"center"},
-  filterBtn:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"9px 14px",borderRadius:12,cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:700,whiteSpace:"nowrap",flexShrink:0},
-  filterBtnActive:{background:"#2D2A26",color:"#fff",borderColor:"#2D2A26"},
-  filterDropdown:{background:"#fff",border:"1px solid #E8E4DD",borderRadius:14,padding:"16px",marginTop:8,boxShadow:"0 4px 20px rgba(0,0,0,.08)"},
-  filterSection:{marginBottom:14},
-  filterSectionLabel:{fontSize:11,fontWeight:700,color:"#8C8578",textTransform:"uppercase",letterSpacing:.8,marginBottom:8},
-  filterChipsWrap:{display:"flex",gap:6,flexWrap:"wrap"},
-  filterClose:{width:"100%",padding:"10px",borderRadius:10,background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",cursor:"pointer",fontSize:13,fontFamily:"'Nunito',sans-serif",fontWeight:700,marginTop:4},
-  sWrap:{position:"relative",flex:1,maxWidth:400},
-  sClear:{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#8C8578",cursor:"pointer",fontSize:14,padding:4},
-  searchResults:{flex:1,padding:"0 20px 20px"},
-  searchResultsHdr:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0 10px"},
-  searchResultsTitle:{fontSize:14,color:"#6B6560"},
-  searchClearBtn:{background:"#FFEBEE",border:"1px solid #EF9A9A",color:"#C62828",padding:"6px 14px",borderRadius:10,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif",fontWeight:700},
-  sIco:{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",fontSize:14,pointerEvents:"none"},
-  sIn:{width:"100%",padding:"9px 14px 9px 36px",borderRadius:12,border:"1px solid #E8E4DD",background:"#FAF7F2",color:"#2D2A26",fontSize:14,fontFamily:"'Nunito',sans-serif",outline:"none"},
-  chips:{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"},
-  chip:{background:"#F5F1EC",border:"1px solid #E8E4DD",color:"#6B6560",padding:"5px 12px",borderRadius:20,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif",fontWeight:600,transition:"all .15s",whiteSpace:"nowrap"},
-  cdiv:{color:"#D4CFC7",margin:"0 2px",fontSize:18},
-  stat:{padding:"8px 20px",fontSize:13,fontWeight:600,background:"#E3F2FD",color:"#1565C0",textAlign:"center"},
-  mainA:{flex:1,padding:"0 20px 20px"},
-  mNav:{display:"flex",alignItems:"center",justifyContent:"center",gap:16,padding:"14px 0"},
-  arr:{background:"#fff",border:"1px solid #E8E4DD",color:"#6B6560",width:38,height:38,borderRadius:"50%",cursor:"pointer",fontSize:20,fontFamily:"'Nunito',sans-serif",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 3px rgba(0,0,0,.06)"},
-  mLbl:{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:"#2D2A26",margin:0},
-  yLbl:{fontWeight:600,color:"#8C8578"},
-  calL:{display:"flex",gap:20,alignItems:"flex-start",flexWrap:"wrap"},
-  calGW:{flex:"1 1 460px",minWidth:0},
-  calG:{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,background:"#E8E4DD",border:"1px solid #E8E4DD",borderRadius:14,overflow:"hidden"},
-  dH:{background:"#2D2A26",color:"#fff",textAlign:"center",fontSize:11,fontWeight:700,padding:"9px 0",textTransform:"uppercase",letterSpacing:.5},
-  eC:{background:"#F5F1EC",minHeight:85,padding:5},
-  cl:{background:"#fff",minHeight:85,padding:5,cursor:"pointer",transition:"background .12s",position:"relative"},
-  clW:{background:"#FDFBF8"},
-  clT:{background:"#FFFDE7",boxShadow:"inset 0 0 0 2px #FBC02D"},
-  clS:{background:"#E3F2FD",boxShadow:"inset 0 0 0 2px #1976D2"},
-  clH:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2},
-  clN:{fontSize:13,fontWeight:700,color:"#6B6560"},
-  clNT:{color:"#F57F17",fontSize:15},
-  tBdg:{fontSize:8,background:"#FBC02D",color:"#fff",padding:"1px 5px",borderRadius:8,fontWeight:700,textTransform:"uppercase"},
-  clEv:{display:"flex",flexDirection:"column",gap:1},
-  cEv:{padding:"2px 4px",borderRadius:3,fontSize:10,fontWeight:600,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",cursor:"pointer"},
-  cMore:{fontSize:9,color:"#8C8578",fontWeight:600,paddingLeft:3},
-  dotsM:{display:"none",gap:3,marginTop:"auto",flexWrap:"wrap"},
-  dotM:{width:6,height:6,borderRadius:"50%",display:"inline-block"},
-  sP:{flex:"0 0 330px",minWidth:270,maxHeight:600,overflowY:"auto",background:"#fff",borderRadius:14,border:"1px solid #E8E4DD",padding:18,boxShadow:"0 2px 12px rgba(0,0,0,.04)"},
-  sT:{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#2D2A26",margin:"0 0 14px",lineHeight:1.3},
-  emSt:{textAlign:"center",padding:"28px 16px",color:"#8C8578"},
-  card:{background:"#fff",borderRadius:14,overflow:"hidden",marginBottom:10,cursor:"pointer",display:"flex",border:"1px solid #E8E4DD",transition:"box-shadow .15s",boxShadow:"0 1px 4px rgba(0,0,0,.04)"},
-  cardImg:{width:90,minHeight:80,flexShrink:0,backgroundSize:"cover",backgroundPosition:"center",borderRadius:"14px 0 0 14px"},
-  cardAc:{width:5,flexShrink:0},
-  cardC:{padding:"10px 12px",flex:1,minWidth:0},
-  cardTop:{display:"flex",gap:5,alignItems:"center",flexWrap:"wrap",marginBottom:5},
-  catBdg:{fontSize:10,fontWeight:700,padding:"2px 9px",borderRadius:12,textTransform:"uppercase",letterSpacing:.3,whiteSpace:"nowrap"},
-  spBdg:{fontSize:10,fontWeight:700,color:"#F57F17",letterSpacing:.3},
-  frBdg:{fontSize:10,fontWeight:700,color:"#2E7D32",background:"#E8F5E9",padding:"2px 8px",borderRadius:10},
-  cardNm:{fontSize:14,fontWeight:700,color:"#2D2A26",margin:"0 0 4px",lineHeight:1.3},
-  cardDt:{display:"flex",flexDirection:"column",gap:2},
-  cdl:{fontSize:12,color:"#6B6560"},
-  cardPr:{fontSize:12,color:"#BF360C",fontWeight:600,marginTop:3},
-  bk:{background:"none",border:"none",color:"#1976D2",cursor:"pointer",fontSize:13,fontWeight:700,padding:"0 0 10px",fontFamily:"'Nunito',sans-serif"},
-  flyerWrap:{borderRadius:14,overflow:"hidden",marginBottom:12,border:"1px solid #E8E4DD"},
-  flyerImg:{width:"100%",height:"auto",display:"block"},
-  dHero:{borderRadius:14,padding:"20px 18px",marginBottom:14},
-  dCatB:{display:"inline-block",fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:20,marginTop:8,textTransform:"uppercase",letterSpacing:.5},
-  dTtl:{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:"#2D2A26",marginTop:8,lineHeight:1.3},
-  dInfo:{borderRadius:14,border:"1px solid #E8E4DD",overflow:"hidden",marginBottom:10},
-  ir:{display:"flex",alignItems:"center",gap:8,padding:"9px 14px",borderBottom:"1px solid #F5F1EC",fontSize:13},
-  irI:{fontSize:15,width:22,textAlign:"center"},
-  irL:{color:"#8C8578",width:85,fontWeight:600,flexShrink:0},
-  irV:{color:"#2D2A26",fontWeight:500},
-  dDesc:{background:"#FAF7F2",borderRadius:14,padding:"14px 18px"},
-  dDTxt:{fontSize:13,lineHeight:1.7,color:"#4A4640",margin:0},
-  listA:{flex:1,padding:"0 20px 20px",maxWidth:800,margin:"0 auto",width:"100%"},
-  ovl:{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16},
-  mdl:{background:"#fff",borderRadius:20,maxWidth:480,width:"100%",maxHeight:"85vh",overflowY:"auto",padding:20},
-  ft:{padding:"12px 20px",borderTop:"1px solid #E8E4DD",display:"flex",justifyContent:"space-between",fontSize:11,color:"#8C8578",background:"#fff"},
-};
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+async function loadEvents(){
+  try{
+    var r=await fetch(API_URL);
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    var data=await r.json();
+    allEvents=Array.isArray(data)?data:(data.events||data.records||[]);
+  }catch(e){console.error("Events load failed:",e);allEvents=[]}
+  filteredEvents=allEvents;renderFeatured();renderCalendar();
+}
+loadEvents();
 </script>
 </body>
 </html>
