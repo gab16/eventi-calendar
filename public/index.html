@@ -549,17 +549,30 @@ async function handleFile(input){
     area.innerHTML="<div class='upload-box'><img class='upload-preview' src='"+dataUrl+"'/><div class='upload-status'>Analisi AI in corso...</div><div class='upload-phase'>Estrazione dati dal volantino</div><div class='progress-bar'><div class='progress-fill' id='prog' style='width:20%'></div></div></div>";
 
     // Send to Flowise
-    var resp=await fetch(FLOWISE,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({question:"Extract event details from this flyer and save to Airtable.",uploads:[{data:dataUrl,type:"file",name:"flyer.jpg",mime:"image/jpeg"}]})
-    });
+    var payload=JSON.stringify({question:"Extract event details from this flyer and save to Airtable.",uploads:[{data:dataUrl,type:"file",name:"flyer.jpg",mime:"image/jpeg"}]});
+    console.log("Flowise payload size:",Math.round(payload.length/1024)+"KB");
+    area.querySelector(".upload-phase").textContent="Invio a Flowise ("+Math.round(payload.length/1024)+"KB)...";
+
+    var resp;
+    try{
+      resp=await fetch(FLOWISE,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:payload
+      });
+    }catch(netErr){
+      throw{message:"Connessione a Flowise fallita",detail:netErr.message+" - Verifica che flowise.tattionline.com sia raggiungibile"};
+    }
 
     document.getElementById("prog").style.width="60%";
     area.querySelector(".upload-phase").textContent="Salvataggio su calendario...";
 
-    if(!resp.ok)throw new Error("Flowise error: "+resp.status);
-    var result=await resp.json();
+    var respText=await resp.text();
+    if(!resp.ok){
+      throw{message:"Flowise errore "+resp.status,detail:respText.slice(0,300)};
+    }
+    var result;
+    try{result=JSON.parse(respText)}catch(e){result={text:respText}}
     var text=result.text||result.output||JSON.stringify(result);
 
     // Try to extract record ID from Flowise response
@@ -598,7 +611,10 @@ async function handleFile(input){
     },600);
 
   }catch(e){
-    area.innerHTML="<div class='upload-box'><div style='font-size:36px;margin-bottom:12px'>&#9888;</div><div class='upload-status' style='color:#c00'>Errore: "+esc(e.message)+"</div><div style='font-size:11px;color:var(--tl);margin-top:8px;word-break:break-all;max-height:80px;overflow:auto'>"+(e.detail||"")+"</div><button class='btn-back' onclick='resetAdd()' style='margin-top:16px'>Riprova</button></div>";
+    var errMsg=typeof e==="object"?e.message||String(e):String(e);
+    var errDetail=typeof e==="object"?e.detail||e.stack||"":"";
+    console.error("Upload error:",errMsg,errDetail);
+    area.innerHTML="<div class='upload-box'><div style='font-size:36px;margin-bottom:12px'>&#9888;</div><div class='upload-status' style='color:#c00'>"+esc(errMsg)+"</div><div style='font-size:11px;color:var(--tl);margin-top:8px;word-break:break-all;max-height:120px;overflow:auto;text-align:left;background:var(--cream);padding:8px;border-radius:6px'>"+esc(errDetail)+"</div><button class='btn-back' onclick='resetAdd()' style='margin-top:16px'>Riprova</button></div>";
   }
 }
 
