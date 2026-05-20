@@ -34,6 +34,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 .topbar-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn-add{width:40px;height:40px;background:var(--blue);border:none;border-radius:50%;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,0.4);transition:background 0.15s}
 .btn-add:active{background:var(--blue-h)}
+.lang-toggle{padding:4px 8px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);color:#fff;border-radius:var(--r);font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.5px;flex-shrink:0}
+.lang-toggle:active{background:rgba(255,255,255,0.25)}
 .btn-hamburger{width:38px;height:38px;background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:var(--r)}
 .btn-hamburger:active{background:rgba(255,255,255,0.1)}
 
@@ -96,6 +98,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 .ps-sport{background:#e8eeff;color:#1840c4}.ps-other{background:#e8e8e8;color:#555}
 .empty-day{text-align:center;padding:48px 24px;color:var(--tl)}
 .search-results{padding:0 12px 16px}
+.featured-home{padding:8px 12px 20px}
+.featured-label{font-size:12px;font-weight:600;color:var(--tl);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.featured-flyer{width:100%;border-radius:var(--r);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
+.featured-flyer img{width:100%;display:block}
+.featured-flyer-ph{width:100%;height:140px;background:linear-gradient(135deg,#c8dfc8,#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:36px}
+.featured-info{padding:10px 12px;background:var(--w);border:1px solid var(--cd);border-top:none;border-radius:0 0 var(--r) var(--r)}
+.featured-name{font-size:14px;font-weight:600;color:var(--td);margin-bottom:3px}
+.featured-meta{font-size:12px;color:var(--tl)}
 .sr-header{padding:12px 16px 8px;font-size:13px;color:var(--tl)}
 .search-wrap{position:relative;flex:1}
 .search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--cd);border-radius:50%;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;color:var(--tm)}
@@ -178,6 +188,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
       <span class="topbar-title">Maremma Live</span>
     </div>
     <button class="btn-add" onclick="goAdd()" title="Aggiungi evento">+</button>
+    <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()">IT</button>
     <button class="btn-hamburger" onclick="toggleFilter()" id="hamburger-btn">&#9776;</button>
   </div>
 
@@ -201,6 +212,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
       <div id="search-results" style="display:none"></div>
       <div id="cal-area">
         <div class="cal-grid" id="cal-grid"></div>
+        <div class="featured-home" id="featured-home"></div>
       </div>
     </div>
   </div>
@@ -283,9 +295,10 @@ function catLabel(c){
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function fmtDate(s,e){
-  if(!s)return"\u2014";var sd=new Date(s);
-  if(!e||e===s)return sd.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
-  return new Date(s).toLocaleDateString("it-IT",{day:"numeric",month:"long"})+" \u2192 "+new Date(e).toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+  if(!s)return"\u2014";
+  function d2s(ds){var d=new Date(ds);return d.getDate()+"/"+(d.getMonth()+1)+"/"+d.getFullYear()}
+  if(!e||e===s)return d2s(s);
+  return d2s(s)+" \u2192 "+d2s(e);
 }
 
 var SVG_CAL='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="12" rx="2" stroke="#718096" stroke-width="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
@@ -702,14 +715,61 @@ if(sessionStorage.getItem("ml_auth")==="1"){
   document.getElementById("app").style.display="flex";
 }
 
+function toggleLang(){
+  var btn=document.getElementById("lang-toggle");
+  if(btn.textContent==="IT"){btn.textContent="EN";btn.style.background="rgba(255,255,255,0.3)"}
+  else{btn.textContent="IT";btn.style.background="rgba(255,255,255,0.15)"}
+}
+
 async function loadEvents(){
   try{
     var r=await fetch(API);if(!r.ok)throw new Error("HTTP "+r.status);
     var data=await r.json();
     allEvents=data.events||data||[];
   }catch(e){console.error(e);allEvents=[]}
-  filtered=allEvents;renderCal();
+  filtered=allEvents;renderCal();renderFeaturedHome();
 }
+
+function renderFeaturedHome(){
+  var el=document.getElementById("featured-home");
+  if(!el)return;
+  var withFlyer=allEvents.filter(function(e){return e.flyer_image||e.flyer_thumb});
+  if(!withFlyer.length){el.innerHTML="";return}
+  var ev=withFlyer[Math.floor(Math.random()*withFlyer.length)];
+  var img=ev.flyer_image||ev.flyer_thumb;
+  var cat=catKey(ev.category);
+  var ds=ev.date_start?new Date(ev.date_start).toLocaleDateString("it-IT",{day:"numeric",month:"short"}):"";
+  el.innerHTML="<div class='featured-label'>In evidenza</div>"
+    +"<div class='featured-flyer' onclick='showFeaturedEvent(""+ev.id+"")'>"
+    +(img?"<img src='"+esc(img)+"' alt='"+esc(ev.event_name||"")+"' loading='lazy'/>":"<div class='featured-flyer-ph'>&#127807;</div>")
+    +"<div class='featured-info'>"
+    +"<div class='featured-name'>"+esc(ev.event_name||"Evento")+"</div>"
+    +"<div class='featured-meta'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span> "+ds+" &middot; "+esc(ev.location_name||"")+"</div>"
+    +"</div></div>";
+}
+
+function showFeaturedEvent(id){
+  var ev=allEvents.find(function(e){return e.id===id});
+  if(!ev)return;
+  selDay=ev.date_start?new Date(ev.date_start):new Date();
+  selDayStr=ev.date_start||"";
+  document.getElementById("event-back-label").textContent="Calendario";
+  var cat=catKey(ev.category);
+  var img=ev.flyer_image||ev.flyer_thumb||"";
+  var price=ev.price?(String(ev.price)==="0"?"Gratuito":ev.price):"Gratuito";
+  var h=img?"<img class='ev-flyer' src='"+esc(img)+"' alt='"+esc(ev.event_name||"")+"'/>":"<div class='ev-flyer-ph'>&#127807;</div>";
+  h+="<div class='ev-body'><div class='ev-pill-row'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span></div>";
+  h+="<div class='ev-name'>"+esc(ev.event_name||"Evento")+"</div>";
+  h+="<div class='ev-row'>"+SVG_CAL+"<span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
+  h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||ev.address||"\u2014")+"</span></div>";
+  if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
+  h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
+  if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
+  h+="</div>";
+  document.getElementById("event-content").innerHTML=h;
+  showScreen("event");
+}
+
 loadEvents();
 </script>
 </body>
