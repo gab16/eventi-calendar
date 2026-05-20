@@ -145,13 +145,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 .loading{display:flex;align-items:center;justify-content:center;padding:32px;color:var(--tl);gap:8px;font-size:13px}
 .spin{width:16px;height:16px;border:2px solid var(--cd);border-top-color:var(--gm);border-radius:50%;animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.pin-overlay{position:fixed;inset:0;background:var(--g);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.pin-overlay.hidden{display:none}
+.pin-logo{width:72px;height:72px;object-fit:contain;border-radius:12px;margin-bottom:8px}
+.pin-title{font-family:'Playfair Display',serif;font-size:22px;color:#fff;font-weight:700}
+.pin-sub{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px}
+.pin-input{width:200px;padding:12px 16px;border-radius:var(--r);border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:16px;text-align:center;font-family:'DM Sans',sans-serif;letter-spacing:2px;outline:none}
+.pin-input:focus{border-color:rgba(255,255,255,0.5)}
+.pin-input::placeholder{color:rgba(255,255,255,0.3);letter-spacing:0}
+.pin-err{font-size:12px;color:#f87171;height:18px}
+.pin-btn{padding:10px 32px;background:#fff;color:var(--g);border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
 
 /* APP SHELL */
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
 </style>
 </head>
 <body>
-<div id="app">
+<div class="pin-overlay" id="pin-overlay">
+  <img class="pin-logo" src="/assets/logo.png" alt="Maremma Live"/>
+  <div class="pin-title">Maremma Live</div>
+  <div class="pin-sub">Demo access</div>
+  <input class="pin-input" id="pin-input" type="password" placeholder="PIN" maxlength="20" onkeydown="if(event.key==='Enter')checkPin()"/>
+  <div class="pin-err" id="pin-err"></div>
+  <button class="pin-btn" onclick="checkPin()">Entra</button>
+</div>
+<div id="app" style="display:none">
 
   <!-- TOP BAR -->
   <div class="topbar">
@@ -553,43 +571,89 @@ async function handleFile(input){
     console.log("Flowise payload size:",Math.round(payload.length/1024)+"KB");
     area.querySelector(".upload-phase").textContent="Invio a Flowise ("+Math.round(payload.length/1024)+"KB)...";
 
-    var resp;
+    var recordId=null;
+    var text="";
+    var flowiseOk=false;
+
+    // Send to Flowise - tolerate timeout
     try{
-      resp=await fetch(FLOWISE,{
+      var resp=await fetch(FLOWISE,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:payload
       });
+      var respText=await resp.text();
+      if(resp.ok){
+        flowiseOk=true;
+        try{var result=JSON.parse(respText);text=result.text||result.output||respText}catch(e){text=respText}
+      }
     }catch(netErr){
-      throw{message:"Connessione a Flowise fallita",detail:netErr.message+" - Verifica che flowise.tattionline.com sia raggiungibile"};
+      console.warn("Flowise fetch error (may still have created record):",netErr.message);
     }
 
-    document.getElementById("prog").style.width="60%";
-    area.querySelector(".upload-phase").textContent="Salvataggio su calendario...";
+    document.getElementById("prog").style.width="50%";
+    area.querySelector(".upload-phase").textContent="Ricerca record creato...";
 
-    var respText=await resp.text();
-    if(!resp.ok){
-      throw{message:"Flowise errore "+resp.status,detail:respText.slice(0,300)};
-    }
-    var result;
-    try{result=JSON.parse(respText)}catch(e){result={text:respText}}
-    var text=result.text||result.output||JSON.stringify(result);
-
-    // Try to extract record ID from Flowise response
-    var recordId=null;
-    try{
-      var parsed=JSON.parse(text);
-      if(Array.isArray(parsed)&&parsed[0]&&parsed[0].id)recordId=parsed[0].id;
-      else if(parsed.id)recordId=parsed.id;
-    }catch(e){
-      var m=text.match(/rec[A-Za-z0-9]{14}/);
-      if(m)recordId=m[0];
+    // Try extract record ID from Flowise response
+    if(text){
+      try{
+        var parsed=JSON.parse(text);
+        if(Array.isArray(parsed)&&parsed[0]&&parsed[0].id)recordId=parsed[0].id;
+        else if(parsed.id)recordId=parsed.id;
+      }catch(e){
+        var m=text.match(/rec[A-Za-z0-9]{14}/);
+        if(m)recordId=m[0];
+      }
     }
 
-    document.getElementById("prog").style.width="80%";
+    // If no record ID from response, poll Airtable for most recent pending record
+    if(!recordId){
+      area.querySelector(".upload-phase").textContent="Verifica su Airtable...";
+      try{
+        var checkResp=await fetch("/api/admin",{headers:{"X-Admin-Password":ADMIN_PW}});
+        if(checkResp.ok){
+          var checkData=await checkResp.json();
+          var recs=checkData.records||checkData.events||checkData||[];
+          if(Array.isArray(recs)&&recs.length){
+            var pending=recs.filter(function(r){return(r.status||r.fields&&r.fields.status)==="pending"});
+            if(pending.length)recordId=pending[pending.length-1].id||pending[pending.length-1].fields&&pending[pending.length-1].fields.id;
+          }
+        }
+      }catch(e){console.warn("Admin check failed:",e)}
+    }
 
-    // Attach image if we got a record ID
+    if(!recordId){
+      // Last resort: wait a few seconds and try again
+      await new Promise(function(r){setTimeout(r,4000)});
+      try{
+        var checkResp2=await fetch("/api/admin",{headers:{"X-Admin-Password":ADMIN_PW}});
+        if(checkResp2.ok){
+          var checkData2=await checkResp2.json();
+          var recs2=checkData2.records||checkData2.events||checkData2||[];
+          if(Array.isArray(recs2)&&recs2.length){
+            var pending2=recs2.filter(function(r){return(r.status||"")==="pending"});
+            if(pending2.length)recordId=pending2[pending2.length-1].id;
+          }
+        }
+      }catch(e){}
+    }
+
+    document.getElementById("prog").style.width="70%";
+
     if(recordId){
+      // Auto-approve: PATCH status to approved
+      area.querySelector(".upload-phase").textContent="Approvazione automatica...";
+      try{
+        await fetch("/api/admin",{
+          method:"PATCH",
+          headers:{"Content-Type":"application/json","X-Admin-Password":ADMIN_PW},
+          body:JSON.stringify({id:recordId,fields:{status:"approved"}})
+        });
+      }catch(e){console.warn("Auto-approve failed:",e)}
+
+      document.getElementById("prog").style.width="85%";
+
+      // Attach image
       area.querySelector(".upload-phase").textContent="Caricamento immagine...";
       try{
         var b64only=dataUrl.split(",")[1];
@@ -607,7 +671,8 @@ async function handleFile(input){
       try{var p=JSON.parse(text);if(Array.isArray(p)&&p[0])evName=p[0].event_name||"";else if(p.event_name)evName=p.event_name}catch(e){}
       area.innerHTML="<div class='upload-done'><div class='upload-done-icon'>&#9989;</div><div class='upload-done-text'>Evento aggiunto!</div>"
         +(evName?"<div style='font-size:14px;color:var(--tm);margin-top:4px;text-align:center;font-weight:600'>"+esc(evName)+"</div>":"")
-        +"<div style='font-size:13px;color:var(--tl);margin-top:4px;text-align:center'>Apparir&agrave; sul calendario dopo approvazione.</div><button class='btn-back' onclick='goHome();loadEvents()'>Torna al calendario</button></div>";
+        +(recordId?"":"<div style='font-size:12px;color:#d97706;margin-top:4px;text-align:center'>Record non trovato - controlla Airtable</div>")
+        +"<button class='btn-back' onclick='goHome();loadEvents()' style='margin-top:16px'>Torna al calendario</button></div>";
     },600);
 
   }catch(e){
@@ -619,6 +684,24 @@ async function handleFile(input){
 }
 
 // INIT
+var APP_PIN="Poggio5!";
+function checkPin(){
+  var v=document.getElementById("pin-input").value;
+  if(v===APP_PIN){
+    document.getElementById("pin-overlay").classList.add("hidden");
+    document.getElementById("app").style.display="flex";
+    sessionStorage.setItem("ml_auth","1");
+  }else{
+    document.getElementById("pin-err").textContent="PIN non valido";
+    document.getElementById("pin-input").value="";
+    document.getElementById("pin-input").focus();
+  }
+}
+if(sessionStorage.getItem("ml_auth")==="1"){
+  document.getElementById("pin-overlay").classList.add("hidden");
+  document.getElementById("app").style.display="flex";
+}
+
 async function loadEvents(){
   try{
     var r=await fetch(API);if(!r.ok)throw new Error("HTTP "+r.status);
