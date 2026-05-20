@@ -558,6 +558,22 @@ async function pdfToJpeg(file){
   return c.toDataURL("image/jpeg",0.85);
 }
 
+async function findPendingRecord(){
+  try{
+    var r=await fetch("/api/admin",{headers:{"X-Admin-Password":ADMIN_PW}});
+    if(!r.ok)return null;
+    var data=await r.json();
+    var evts=data.events||[];
+    var pending=evts.filter(function(e){return e.status==="pending"});
+    console.log("Found "+pending.length+" pending records");
+    if(!pending.length)return null;
+    // Return the one with the most recent id (Airtable IDs are roughly chronological)
+    pending.sort(function(a,b){return b.id.localeCompare(a.id)});
+    console.log("Most recent pending:",pending[0].id,pending[0].event_name);
+    return pending[0].id;
+  }catch(e){console.warn("findPendingRecord error:",e);return null}
+}
+
 async function handleFile(input){
   var file=input.files&&input.files[0];
   if(!file)return;
@@ -582,7 +598,8 @@ async function handleFile(input){
     // Send to Flowise
     var payload=JSON.stringify({question:"Extract event details from this flyer and save to Airtable.",uploads:[{data:dataUrl,type:"file",name:"flyer.jpg",mime:"image/jpeg"}]});
     console.log("Flowise payload size:",Math.round(payload.length/1024)+"KB");
-    area.querySelector(".upload-phase").textContent="Invio a Flowise ("+Math.round(payload.length/1024)+"KB)...";
+    area.querySelector(".upload-phase").textContent="Analisi AI ("+Math.round(payload.length/1024)+"KB)...";
+    area.querySelector(".upload-status").textContent="Potrebbe richiedere 20-30 secondi...";
 
     var recordId=null;
     var text="";
@@ -621,34 +638,16 @@ async function handleFile(input){
 
     // If no record ID from response, poll Airtable for most recent pending record
     if(!recordId){
-      area.querySelector(".upload-phase").textContent="Verifica su Airtable...";
-      try{
-        var checkResp=await fetch("/api/admin",{headers:{"X-Admin-Password":ADMIN_PW}});
-        if(checkResp.ok){
-          var checkData=await checkResp.json();
-          var recs=checkData.records||checkData.events||checkData||[];
-          if(Array.isArray(recs)&&recs.length){
-            var pending=recs.filter(function(r){return(r.status||r.fields&&r.fields.status)==="pending"});
-            if(pending.length)recordId=pending[pending.length-1].id||pending[pending.length-1].fields&&pending[pending.length-1].fields.id;
-          }
-        }
-      }catch(e){console.warn("Admin check failed:",e)}
+      area.querySelector(".upload-phase").textContent="Ricerca record su Airtable...";
+      // Wait for Flowise to finish writing to Airtable
+      await new Promise(function(r){setTimeout(r,5000)});
+      recordId=await findPendingRecord();
     }
-
     if(!recordId){
-      // Last resort: wait a few seconds and try again
-      await new Promise(function(r){setTimeout(r,4000)});
-      try{
-        var checkResp2=await fetch("/api/admin",{headers:{"X-Admin-Password":ADMIN_PW}});
-        if(checkResp2.ok){
-          var checkData2=await checkResp2.json();
-          var recs2=checkData2.records||checkData2.events||checkData2||[];
-          if(Array.isArray(recs2)&&recs2.length){
-            var pending2=recs2.filter(function(r){return(r.status||"")==="pending"});
-            if(pending2.length)recordId=pending2[pending2.length-1].id;
-          }
-        }
-      }catch(e){}
+      // Second attempt after longer wait
+      area.querySelector(".upload-phase").textContent="Attendo elaborazione...";
+      await new Promise(function(r){setTimeout(r,8000)});
+      recordId=await findPendingRecord();
     }
 
     document.getElementById("prog").style.width="70%";
@@ -684,7 +683,7 @@ async function handleFile(input){
       try{var p=JSON.parse(text);if(Array.isArray(p)&&p[0])evName=p[0].event_name||"";else if(p.event_name)evName=p.event_name}catch(e){}
       area.innerHTML="<div class='upload-done'><div class='upload-done-icon'>&#9989;</div><div class='upload-done-text'>Evento aggiunto!</div>"
         +(evName?"<div style='font-size:14px;color:var(--tm);margin-top:4px;text-align:center;font-weight:600'>"+esc(evName)+"</div>":"")
-        +(recordId?"":"<div style='font-size:12px;color:#d97706;margin-top:4px;text-align:center'>Record non trovato - controlla Airtable</div>")
+        +(recordId?"":"<div style='font-size:12px;color:#d97706;margin-top:8px;text-align:center'>L\'elaborazione potrebbe ancora essere in corso.<br>Controlla tra qualche secondo.</div>")
         +"<button class='btn-back' onclick='goHome();loadEvents()' style='margin-top:16px'>Torna al calendario</button></div>";
     },600);
 
