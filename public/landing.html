@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Maremma Live &mdash; Scopri gli eventi della Maremma Toscana</title>
+<meta name="description" content="Festival, musica, cibo, mercati e momenti indimenticabili in Maremma Toscana."/>
+<link rel="icon" href="/assets/logo.png"/>
+<link rel="apple-touch-icon" href="/assets/logo.png"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="theme-color" content="#1a3d2b"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="MaremmaLive"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--green-dark:#1a3d2b;--green-mid:#2d7d5a;--cream:#f5f0e8;--cream-dark:#e8e1d4;--text-dark:#1a1a1a;--text-mid:#4a5568;--text-light:#718096;--r-sm:6px;--r-md:10px;--r-lg:16px}
+html{font-size:15px}body{font-family:"DM Sans",sans-serif;background:var(--cream);color:var(--text-dark);line-height:1.5}
+img{display:block;max-width:100%}button{font-family:"DM Sans",sans-serif}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--cream-dark);border-radius:2px}
+.announce-bar{background:var(--green-dark);color:#fff;padding:9px 24px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.announce-bar span{flex:1;text-align:center}.auth-btns{display:flex;gap:8px;flex-shrink:0}
+.btn-o{border:1.5px solid rgba(255,255,255,0.6);color:#fff;background:transparent;padding:5px 14px;border-radius:var(--r-sm);font-size:12.5px;cursor:pointer}
+.btn-f{border:1.5px solid #fff;color:var(--green-dark);background:#fff;padding:5px 14px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;cursor:pointer}
+header{background:#fff;border-bottom:1px solid var(--cream-dark);padding:0 28px;display:flex;align-items:center;height:62px;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,0.05)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text-dark);flex-shrink:0}
+.logo img{height:44px;width:auto;object-fit:contain}.logo-text{line-height:1.15}
+.logo-name{font-family:"Playfair Display",serif;font-weight:700;font-size:17px;color:var(--green-dark);display:block}
+.logo-sub{font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-light);display:block}
+nav{display:flex;align-items:center;gap:2px;margin-left:12px}
+.nav-btn{padding:6px 13px;border-radius:var(--r-sm);font-size:13.5px;font-weight:500;border:none;background:transparent;cursor:pointer;color:var(--text-mid);transition:all 0.15s}
+.nav-btn:hover{background:var(--cream);color:var(--text-dark)}.nav-btn.active{background:var(--green-dark);color:#fff}
+.nav-btn.disabled{opacity:0.4;cursor:not-allowed}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{width:34px;height:34px;border:none;background:transparent;cursor:pointer;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--text-mid);font-size:16px;transition:background 0.15s}
+.icon-btn:hover{background:var(--cream)}
+.lang-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);background:#fff;font-size:12.5px;font-weight:500;cursor:pointer}
+.hero{background:var(--cream);padding:28px 28px 0;display:grid;grid-template-columns:1fr 400px;gap:24px;align-items:start}
+.hero-left{padding:12px 0;max-width:380px}
+.hero-tagline{font-family:"Playfair Display",serif;font-size:50px;font-weight:900;line-height:1.04;color:var(--green-dark);margin-bottom:14px}
+.hero-sub{font-size:15.5px;color:var(--text-mid);margin-bottom:24px;line-height:1.65}
+.search-bar{display:flex;background:#fff;border:1.5px solid var(--cream-dark);border-radius:var(--r-md);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.07)}
+.search-input{flex:1;border:none;outline:none;padding:12px 16px;font-size:13.5px;font-family:"DM Sans",sans-serif;background:transparent}
+.search-btn{background:transparent;border:none;padding:12px 16px;cursor:pointer;color:var(--text-mid);font-size:13px;font-weight:500;border-left:1px solid var(--cream-dark);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.hero-right{display:flex;flex-direction:column;gap:14px;padding-top:4px}
+.hero-map-wrap{border-radius:var(--r-lg);overflow:hidden;height:248px;box-shadow:0 4px 20px rgba(0,0,0,0.12)}
+.hero-map-wrap img{width:100%;height:100%;object-fit:cover;object-position:center 20%}
+.sponsor-card{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);padding:18px}
+.sponsor-label{font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:6px}
+.sponsor-title{font-family:"Playfair Display",serif;font-size:15px;font-weight:700;color:var(--text-dark);margin-bottom:12px;line-height:1.25}
+.sponsor-btn{display:inline-block;padding:7px 16px;border:1.5px solid var(--text-dark);border-radius:var(--r-sm);font-size:12.5px;font-weight:500;cursor:pointer;background:transparent;transition:all 0.2s}
+.sponsor-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.main-wrap{padding:0 28px 48px;display:grid;grid-template-columns:1fr 216px;gap:22px;align-items:start;margin-top:26px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;color:var(--text-dark)}
+.view-all{font-size:12.5px;color:var(--green-mid);cursor:pointer;font-weight:500;border:none;background:transparent}
+.featured-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.featured-scroll::-webkit-scrollbar{display:none}
+.ev-card{flex-shrink:0;width:142px;cursor:pointer;transition:transform 0.18s}
+.ev-card:hover{transform:translateY(-3px)}
+.ev-card-img{width:142px;height:126px;border-radius:var(--r-md);background:var(--cream-dark);overflow:hidden;position:relative;margin-bottom:7px}
+.ev-card-img img{width:100%;height:100%;object-fit:cover}
+.ev-img-ph{width:100%;height:100%;background:linear-gradient(135deg,#c8dfc8,#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:30px}
+.ev-date-badge{position:absolute;bottom:7px;left:7px;background:rgba(0,0,0,0.68);color:#fff;border-radius:5px;padding:3px 7px;font-size:10px;font-weight:600;line-height:1.1}
+.ev-date-badge .day{font-size:15px;display:block}
+.cat-pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px}
+.c-festival{background:#fde8cc;color:#954e00}.c-music{background:#e8d5f5;color:#5c1a9e}
+.c-market{background:#cce8f5;color:#02628a}.c-food{background:#d5f5e3;color:#126b33}
+.c-wellness{background:#fce8e8;color:#b01030}.c-culture{background:#e8e8d5;color:#5a6600}
+.c-sport{background:#e8eeff;color:#1840c4}.c-other{background:#e8e8e8;color:#555}
+.ev-card-name{font-size:12.5px;font-weight:600;color:var(--text-dark);margin-bottom:3px;line-height:1.3}
+.ev-card-loc{font-size:11.5px;color:var(--text-light)}
+.cal-wrap{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);padding:20px;margin-top:26px}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-nav-btn{width:29px;height:29px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);background:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;color:var(--text-mid)}
+.cal-nav-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.cal-month-label{font-family:"Playfair Display",serif;font-size:17px;font-weight:700;color:var(--text-dark)}
+.today-btn{padding:4px 12px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);background:#fff;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s}
+.today-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--cream-dark);border:1px solid var(--cream-dark);border-radius:var(--r-sm);overflow:hidden}
+.cal-day-hdr{background:var(--cream);text-align:center;padding:7px 2px;font-size:10.5px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:0.04em}
+.cal-cell{background:#fff;min-height:68px;padding:5px 4px;cursor:pointer;transition:background 0.12s}
+.cal-cell:hover{background:#f9f5ee}.cal-cell.other-month .cal-date{color:#ccc}
+.cal-cell.is-today{background:#eaf5ee}
+.cal-cell.is-today .cal-date{background:var(--green-mid);color:#fff;border-radius:50%;width:21px;height:21px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.cal-date{font-size:12.5px;font-weight:500;color:var(--text-dark);margin-bottom:3px;width:21px;height:21px;display:flex;align-items:center;justify-content:center}
+.cal-ev-pill{font-size:9.5px;padding:1px 4px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:500;margin-bottom:1px;max-width:100%;border:none;text-align:left;display:block;width:100%}
+.pill-festival{background:#fde8cc;color:#954e00}.pill-music{background:#e8d5f5;color:#5c1a9e}
+.pill-market{background:#cce8f5;color:#02628a}.pill-food{background:#d5f5e3;color:#126b33}
+.pill-wellness{background:#fce8e8;color:#b01030}.pill-culture{background:#e8e8d5;color:#5a6600}
+.pill-sport,.pill-other{background:#e8e8e8;color:#555}
+.sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:74px}
+.detail-card{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);overflow:hidden}
+.detail-img-wrap{height:124px;overflow:hidden;background:linear-gradient(135deg,var(--cream-dark),#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:36px}
+.detail-img-wrap img{width:100%;height:124px;object-fit:cover}
+.detail-body{padding:14px}
+.detail-title{font-family:"Playfair Display",serif;font-size:14px;font-weight:700;color:var(--text-dark);margin:7px 0 10px;line-height:1.3}
+.detail-row{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;font-size:12px;color:var(--text-mid);line-height:1.4}
+.detail-row svg{flex-shrink:0;margin-top:1px}
+.detail-actions{display:flex;gap:7px;margin-top:12px}
+.btn-primary{flex:1;background:var(--green-dark);color:#fff;border:none;padding:9px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;cursor:pointer}
+.btn-primary:hover{background:#0f2b1d}
+.btn-icon{width:34px;height:34px;border:1.5px solid var(--cream-dark);border-radius:var(--r-sm);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid);font-size:14px}
+.btn-icon:hover{border-color:var(--green-mid);color:var(--green-mid)}
+.banner{background:#fff;border:1px solid var(--cream-dark);border-radius:var(--r-lg);overflow:hidden;margin-top:26px;display:grid;grid-template-columns:1fr 200px;align-items:stretch}
+.banner-body{padding:26px 30px}
+.banner-label{font-size:10px;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-light);margin-bottom:5px}
+.banner-title{font-family:"Playfair Display",serif;font-size:22px;font-weight:700;color:var(--text-dark);margin-bottom:5px}
+.banner-sub{font-size:13px;color:var(--text-mid);margin-bottom:14px}
+.btn-green{background:var(--green-dark);color:#fff;border:none;padding:10px 20px;border-radius:var(--r-sm);font-size:13.5px;font-weight:600;cursor:pointer}
+.btn-green:hover{background:#0f2b1d}
+.banner-pic{background:linear-gradient(135deg,#7ab898,#c4d9b0,#e8d4a0);display:flex;align-items:center;justify-content:center;font-size:56px}
+.nl-section{padding:0 28px;margin-bottom:0}
+.newsletter{background:var(--green-dark);border-radius:var(--r-lg);padding:36px 44px;display:grid;grid-template-columns:80px 1fr;gap:28px;align-items:center}
+.nl-logo{width:72px;height:72px;object-fit:contain;filter:brightness(0) invert(1);opacity:0.85}
+.nl-title{font-family:"Playfair Display",serif;font-size:24px;font-weight:700;color:#fff;margin-bottom:6px}
+.nl-sub{font-size:13.5px;color:rgba(255,255,255,0.72);line-height:1.55;margin-bottom:14px}
+.nl-form{display:flex;gap:8px}
+.nl-input{flex:1;padding:11px 15px;border-radius:var(--r-sm);border:none;outline:none;font-family:"DM Sans",sans-serif;font-size:13.5px;background:rgba(255,255,255,0.14);color:#fff}
+.nl-input::placeholder{color:rgba(255,255,255,0.45)}
+.nl-btn{padding:11px 22px;background:#fff;color:var(--green-dark);border:none;border-radius:var(--r-sm);font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.nl-spam{font-size:11.5px;color:rgba(255,255,255,0.38);margin-top:8px}
+footer{background:#fff;border-top:1px solid var(--cream-dark);padding:38px 28px 20px;margin-top:28px}
+.foot-grid{display:grid;grid-template-columns:210px 1fr 1fr 1fr;gap:28px;margin-bottom:28px}
+.foot-brand-logo{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.foot-brand-logo img{height:36px;object-fit:contain}
+.foot-brand-name{font-family:"Playfair Display",serif;font-weight:700;font-size:15px;color:var(--green-dark)}
+.foot-brand p{font-size:12.5px;color:var(--text-light);margin-bottom:14px;line-height:1.55}
+.foot-social{display:flex;gap:8px}
+.soc-btn{width:30px;height:30px;border:1px solid var(--cream-dark);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--text-mid);cursor:pointer;font-size:12px;transition:all 0.15s;text-decoration:none;background:#fff}
+.soc-btn:hover{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+.foot-col h4{font-size:12.5px;font-weight:600;color:var(--text-dark);margin-bottom:10px}
+.foot-col a{display:block;font-size:12.5px;color:var(--text-light);margin-bottom:6px;text-decoration:none;transition:color 0.15s}
+.foot-col a:hover{color:var(--green-mid)}
+.foot-contact{font-size:12.5px;color:var(--text-light);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.foot-bottom{display:flex;justify-content:space-between;border-top:1px solid var(--cream-dark);padding-top:16px;font-size:11.5px;color:var(--text-light)}
+.loading{display:flex;align-items:center;justify-content:center;padding:32px;color:var(--text-light);font-size:13.5px;gap:8px}
+.spin{width:16px;height:16px;border:2px solid var(--cream-dark);border-top-color:var(--green-mid);border-radius:50%;animation:sp 0.8s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;opacity:0;transition:opacity 0.25s}
+.sheet-overlay.open{display:block;opacity:1}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:18px 18px 0 0;z-index:201;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);max-height:88vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px)}
+.bottom-sheet.open{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--cream-dark);border-radius:2px;margin:12px auto 4px}
+.sheet-close{position:absolute;top:12px;right:14px;width:28px;height:28px;border:none;background:var(--cream);border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text-mid)}
+.sheet-img{width:100%;height:180px;overflow:hidden;background:linear-gradient(135deg,var(--cream-dark),#d4e8c4)}
+.sheet-img-ph{width:100%;height:140px;background:linear-gradient(135deg,#c8dfc8,#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:44px}
+.sheet-body{padding:16px 20px 28px}
+.sheet-title{font-family:"Playfair Display",serif;font-size:20px;font-weight:700;color:var(--text-dark);margin:8px 0 14px;line-height:1.25}
+.sheet-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:13.5px;color:var(--text-mid);line-height:1.4}
+.sheet-row svg{flex-shrink:0;margin-top:2px}
+.sheet-desc{font-size:13px;color:var(--text-mid);line-height:1.6;margin-top:14px;padding-top:14px;border-top:1px solid var(--cream-dark)}
+.sheet-actions{display:flex;gap:10px;margin-top:18px}
+.sheet-btn-primary{flex:1;background:var(--green-dark);color:#fff;border:none;padding:13px;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif}
+.sheet-btn-icon{width:44px;height:44px;border:1.5px solid var(--cream-dark);border-radius:var(--r-sm);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-mid);font-size:17px}
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;padding-bottom:0}.hero-right{display:none}
+  .main-wrap{grid-template-columns:1fr}.sidebar{position:static;display:none}
+  .foot-grid{grid-template-columns:1fr 1fr;gap:20px}
+  .newsletter{grid-template-columns:1fr;padding:28px 24px}.nl-logo{display:none}
+  .banner{grid-template-columns:1fr}.banner-pic{display:none}
+}
+@media(max-width:600px){
+  .announce-bar{padding:7px 12px;font-size:11.5px}
+  .announce-bar .auth-btns{display:none}
+  header{padding:0 12px;height:52px}
+  .logo img{height:36px}
+  .logo-name{font-size:15px}
+  .logo-sub{display:none}
+  nav{margin-left:4px}
+  nav .nav-btn{padding:5px 9px;font-size:12.5px}
+  nav .nav-btn:nth-child(n+4){display:none}
+  .hero{padding:14px 16px 0}
+  .hero-left{padding:4px 0;max-width:100%}
+  .hero-tagline{font-size:32px;margin-bottom:8px}
+  .hero-sub{font-size:14px;margin-bottom:14px}
+  .search-bar .search-input{padding:9px 12px;font-size:13px}
+  .search-btn{padding:9px 12px;font-size:12px}
+  .main-wrap{padding:0 16px 24px;margin-top:16px}
+  .section-header{margin-bottom:10px}
+  .section-title{font-size:17px}
+  .ev-card{width:120px}
+  .ev-card-img{width:120px;height:106px}
+  .featured-scroll{gap:9px;margin-bottom:0}
+  .cal-wrap{padding:14px;margin-top:16px}
+  .cal-hdr{margin-bottom:12px}
+  .cal-month-label{font-size:15px}
+  .cal-cell{min-height:52px;padding:4px 3px}
+  .cal-date{font-size:11.5px}
+  .cal-ev-pill{font-size:8.5px}
+  .cal-day-hdr{padding:5px 2px;font-size:9.5px}
+  .nl-section{padding:0 16px}
+  footer{padding:28px 16px 16px}.foot-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="announce-bar">
+  <span>Fai tua la Maremma. Registrati per personalizzare il tuo calendario, caricare eventi e non perderti nulla.</span>
+  <div class="auth-btns">
+    <button class="btn-o">Accedi</button>
+    <button class="btn-f">Registrati</button>
+  </div>
+</div>
+
+<header>
+  <a class="logo" href="/">
+    <img src="/assets/logo.png" alt="Maremma Live"/>
+    <div class="logo-text">
+      <span class="logo-name">Maremma Live</span>
+      <span class="logo-sub">Scopri gli eventi della Maremma Toscana</span>
+    </div>
+  </a>
+  <nav>
+    <button class="nav-btn active">&#128197; Calendario</button>
+    <button class="nav-btn">Lista</button>
+    <button class="nav-btn disabled" title="Disponibile presto">Mappa</button>
+    <button class="nav-btn">Esplora</button>
+    <button class="nav-btn" onclick="goToday()">Oggi</button>
+  </nav>
+  <div class="header-right">
+    <button class="icon-btn" title="Preferiti">&#9825;</button>
+    <button class="icon-btn" title="Profilo">&#128100;</button>
+    <button class="lang-btn">&#127470;&#127481; ITA &#9662;</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-left">
+    <h1 class="hero-tagline">Live local.<br>Feel Tuscany.</h1>
+    <p class="hero-sub">Festival, musica, cibo, mercati<br>&amp; momenti indimenticabili.</p>
+    <div class="search-bar">
+      <input class="search-input" id="search-input" type="text" placeholder="Cerca eventi, luoghi, categorie..." oninput="filterEvents()"/>
+      <button class="search-btn">&#9881; Filtri</button>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-map-wrap">
+      <img src="/assets/map-maremma.png" alt="Mappa della Maremma Toscana"/>
+    </div>
+    <div class="sponsor-card">
+      <div class="sponsor-label">Sponsor</div>
+      <div class="sponsor-title">Discover the authentic Maremma</div>
+      <button class="sponsor-btn">Learn more</button>
+    </div>
+  </div>
+</section>
+
+<div class="main-wrap">
+  <div class="main-col">
+    <div class="section-header">
+      <h2 class="section-title">Featured events</h2>
+      <button class="view-all">View all events &#8250;</button>
+    </div>
+    <div class="featured-scroll" id="featured-scroll">
+      <div class="loading"><div class="spin"></div> Caricamento eventi...</div>
+    </div>
+    <div class="cal-wrap">
+      <div class="cal-hdr">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+          <span class="cal-month-label" id="cal-label"></span>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+        </div>
+        <button class="today-btn" onclick="goToday()">Oggi</button>
+      </div>
+      <div class="cal-grid" id="cal-grid">
+        <div class="loading" style="grid-column:1/-1"><div class="spin"></div></div>
+      </div>
+    </div>
+    <div class="banner">
+      <div class="banner-body">
+        <div class="banner-label">Sponsor</div>
+        <div class="banner-title">Taste the real Tuscany</div>
+        <div class="banner-sub">Prodotti locali, sapori indimenticabili.</div>
+        <button class="btn-green">Esplora</button>
+      </div>
+      <div class="banner-pic">&#127807;</div>
+    </div>
+  </div>
+  <aside class="sidebar">
+    <div class="detail-card" id="event-detail">
+      <div class="detail-img-wrap">&#128197;</div>
+      <div class="detail-body">
+        <span class="cat-pill c-other">Seleziona un evento</span>
+        <div class="detail-title">Clicca su un evento nel calendario per vedere i dettagli</div>
+      </div>
+    </div>
+    <div class="sponsor-card">
+      <div class="sponsor-label">Sponsor</div>
+      <div class="sponsor-title">Stay in the heart of Maremma</div>
+      <button class="sponsor-btn">Book your stay</button>
+    </div>
+  </aside>
+</div>
+
+<div class="nl-section">
+  <div class="newsletter">
+    <img src="/assets/logo.png" class="nl-logo" alt="Maremma Live"/>
+    <div>
+      <div class="nl-title">Stay in the know</div>
+      <div class="nl-sub">Iscriviti e non perdere eventi, storie e ispirazione locale dalla Maremma.</div>
+      <div class="nl-form">
+        <input class="nl-input" id="nl-email" type="email" placeholder="La tua email"/>
+        <button class="nl-btn" onclick="subscribeNewsletter()">Iscriviti</button>
+      </div>
+      <div class="nl-spam">Nessuno spam, cancellati in qualsiasi momento.</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <div class="foot-brand">
+      <div class="foot-brand-logo">
+        <img src="/assets/logo.png" alt="Maremma Live"/>
+        <span class="foot-brand-name">Maremma Live</span>
+      </div>
+      <p>La tua guida ai migliori eventi, luoghi ed esperienze della Maremma Toscana.</p>
+      <div class="foot-social">
+        <a class="soc-btn" href="#" title="Facebook">f</a>
+        <a class="soc-btn" href="#" title="Instagram">in</a>
+        <a class="soc-btn" href="#" title="YouTube">yt</a>
+        <a class="soc-btn" href="#" title="Newsletter">&#9993;</a>
+      </div>
+    </div>
+    <div class="foot-col">
+      <h4>Esplora</h4>
+      <a href="#">Calendario eventi</a><a href="#">Lista</a><a href="#">Mappa</a>
+      <a href="#">Esplora</a><a href="#">Oggi</a>
+    </div>
+    <div class="foot-col">
+      <h4>Informazioni</h4>
+      <a href="#">Chi siamo</a><a href="#">Contatti</a><a href="#">Pubblicit&#224;</a>
+      <a href="#">Invia un evento</a><a href="#">Privacy Policy</a>
+      <a href="#">Termini e condizioni</a>
+    </div>
+    <div class="foot-col">
+      <h4>Contatti</h4>
+      <div class="foot-contact">&#128222; +39 0564 123456</div>
+      <div class="foot-contact">&#9993; info@maremmalive.it</div>
+      <div class="foot-contact">&#128205; Grosseto, Toscana, Italy</div>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>&#169; 2026 Maremma Live. All rights reserved.</span>
+    <span>Made with &#9829; in Maremma Toscana</span>
+  </div>
+</footer>
+
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <button class="sheet-close" onclick="closeSheet()">&#10005;</button>
+  <div id="sheet-content"></div>
+</div>
+
+<script>
+var API_URL="/api/events";
+var MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+var DAYS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+var allEvents=[],filteredEvents=[],curDate=new Date();
+
+function catKey(cat){
+  if(!cat)return"other";var c=cat.toLowerCase();
+  if(c.indexOf("festival")>=0)return"festival";
+  if(c.indexOf("music")>=0||c.indexOf("concert")>=0)return"music";
+  if(c.indexOf("market")>=0||c.indexOf("merca")>=0||c.indexOf("fiera")>=0)return"market";
+  if(c.indexOf("food")>=0||c.indexOf("cibo")>=0||c.indexOf("wine")>=0||c.indexOf("vino")>=0||c.indexOf("gastr")>=0)return"food";
+  if(c.indexOf("well")>=0||c.indexOf("benes")>=0||c.indexOf("yoga")>=0)return"wellness";
+  if(c.indexOf("cult")>=0||c.indexOf("arte")>=0||c.indexOf("teatro")>=0||c.indexOf("mostr")>=0)return"culture";
+  if(c.indexOf("sport")>=0)return"sport";
+  return"other";
+}
+function catLabel(cat){
+  var m={festival:"Festival",music:"Musica",market:"Mercato",food:"Food & Wine",wellness:"Wellness",culture:"Cultura",sport:"Sport",other:"Altro"};
+  return m[catKey(cat)]||cat||"Altro";
+}
+function fmtDate(s,e){
+  if(!s)return"—";
+  var sd=new Date(s);
+  if(!e||e===s)return sd.toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+  return new Date(s).toLocaleDateString("it-IT",{day:"numeric",month:"long"})+" → "+new Date(e).toLocaleDateString("it-IT",{day:"numeric",month:"long",year:"numeric"});
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function encEv(ev){return encodeURIComponent(JSON.stringify(ev))}
+function decEv(s){return JSON.parse(decodeURIComponent(s))}
+
+var SVG_CAL='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="12" rx="2" stroke="#718096" stroke-width="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_PIN='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6c0-2.5-2-4.5-4.5-4.5z" stroke="#718096" stroke-width="1.5"/><circle cx="8" cy="6" r="1.5" stroke="#718096" stroke-width="1.5"/></svg>';
+var SVG_CLK='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#718096" stroke-width="1.5"/><path d="M8 5v3.5l2 1.5" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_TKT='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="10" rx="2" stroke="#718096" stroke-width="1.5"/><path d="M5 4V2.5a1 1 0 012 0V4M9 4V2.5a1 1 0 012 0V4" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var SVG_GLOB='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#718096" stroke-width="1.5"/><path d="M8 1.5S5.5 4 5.5 8s2.5 6.5 2.5 6.5M8 1.5S10.5 4 10.5 8 8 14.5 8 14.5M1.5 8h13" stroke="#718096" stroke-width="1.2"/></svg>';
+
+function buildRows(ev, cls){
+  var price=ev.price?(String(ev.price)==="0"?"Gratuito":ev.price):"Gratuito";
+  var langs={it:"Italiano",en:"English",de:"Deutsch",fr:"Français"};
+  var lang=ev.language?langs[ev.language]||ev.language:"";
+  var h="";
+  h+="<div class='"+cls+"'>"+SVG_CAL+"<span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
+  h+="<div class='"+cls+"'>"+SVG_PIN+"<span>"+esc(ev.location_name||ev.address||"—")+"</span></div>";
+  if(ev.time_start)h+="<div class='"+cls+"'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
+  h+="<div class='"+cls+"'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
+  if(lang)h+="<div class='"+cls+"'>"+SVG_GLOB+"<span>"+esc(lang)+"</span></div>";
+  return h;
+}
+
+function showDetail(ev){
+  var cat=catKey(ev.category);
+  var img=ev.flyer_image&&ev.flyer_image[0]?ev.flyer_image[0].url:"";
+  var isMobile=window.innerWidth<=900;
+  if(isMobile){
+    var h=img
+      ? "<div class='sheet-img'><img src='"+esc(img)+"' loading='lazy' alt='"+esc(ev.event_name||"")+"' style='width:100%;height:100%;object-fit:cover'/></div>"
+      : "<div class='sheet-img-ph'>&#127807;</div>";
+    h+="<div class='sheet-body'>";
+    h+="<span class='cat-pill c-"+cat+"'>"+catLabel(ev.category)+"</span>";
+    h+="<div class='sheet-title'>"+esc(ev.event_name||"Evento")+"</div>";
+    h+=buildRows(ev,"sheet-row");
+    if(ev.description)h+="<div class='sheet-desc'>"+esc(ev.description)+"</div>";
+    h+="<div class='sheet-actions'><button class='sheet-btn-primary'>Vedi dettagli</button><button class='sheet-btn-icon'>&#9825;</button><button class='sheet-btn-icon'>&#8599;</button></div>";
+    h+="</div>";
+    document.getElementById("sheet-content").innerHTML=h;
+    document.getElementById("sheet-overlay").classList.add("open");
+    document.getElementById("bottom-sheet").classList.add("open");
+    document.body.style.overflow="hidden";
+  } else {
+    var h="<div class='detail-img-wrap'>"+(img?"<img src='"+esc(img)+"' loading='lazy' alt='"+esc(ev.event_name||"")+"'/>":"&#127807;")+"</div>";
+    h+="<div class='detail-body'>";
+    h+="<span class='cat-pill c-"+cat+"'>"+catLabel(ev.category)+"</span>";
+    h+="<div class='detail-title'>"+esc(ev.event_name||"Evento")+"</div>";
+    h+=buildRows(ev,"detail-row");
+    h+="<div class='detail-actions'><button class='btn-primary'>Vedi dettagli</button><button class='btn-icon' title='Salva'>&#9825;</button><button class='btn-icon' title='Condividi'>&#8599;</button></div>";
+    h+="</div>";
+    document.getElementById("event-detail").innerHTML=h;
+  }
+}
+
+function closeSheet(){
+  document.getElementById("sheet-overlay").classList.remove("open");
+  document.getElementById("bottom-sheet").classList.remove("open");
+  document.body.style.overflow="";
+}
+
+function renderFeatured(){
+  var src=filteredEvents.filter(function(e){return e.is_featured||e.is_sponsored});
+  var list=(src.length?src:filteredEvents).slice(0,10);
+  var el=document.getElementById("featured-scroll");
+  if(!list.length){el.innerHTML="<div class='loading'>Nessun evento trovato</div>";return}
+  el.innerHTML=list.map(function(ev){
+    var cat=catKey(ev.category);
+    var d=ev.date_start?new Date(ev.date_start):null;
+    var img=ev.flyer_image&&ev.flyer_image[0]?ev.flyer_image[0].url:"";
+    var key=encEv(ev);
+    return "<div class='ev-card' onclick='showDetail(decEv(this.dataset.ev))' data-ev='"+key+"'>"
+      +"<div class='ev-card-img'>"+(img?"<img src='"+esc(img)+"' alt='"+esc(ev.event_name||"")+"' loading='lazy'/>":"<div class='ev-img-ph'>&#127807;</div>")
+      +(d?"<div class='ev-date-badge'><span class='day'>"+d.getDate()+"</span>"+MONTHS[d.getMonth()].slice(0,3).toUpperCase()+"</div>":"")
+      +"</div><span class='cat-pill c-"+cat+"'>"+catLabel(ev.category)+"</span>"
+      +"<div class='ev-card-name'>"+esc(ev.event_name||"Evento")+"</div>"
+      +"<div class='ev-card-loc'>&#128205; "+esc(ev.location_name||ev.address||"—")+"</div></div>";
+  }).join("");
+}
+
+function renderCalendar(){
+  var y=curDate.getFullYear(),m=curDate.getMonth();
+  document.getElementById("cal-label").textContent=MONTHS[m]+" "+y;
+  var today=new Date(),firstDow=new Date(y,m,1).getDay();
+  var startDow=firstDow===0?6:firstDow-1;
+  var daysInM=new Date(y,m+1,0).getDate(),daysInPrev=new Date(y,m,0).getDate();
+  var byDay={};
+  filteredEvents.forEach(function(ev){
+    if(!ev.date_start)return;
+    var start=new Date(ev.date_start),end=ev.date_end?new Date(ev.date_end):new Date(start);
+    for(var cur=new Date(start);cur<=end;cur.setDate(cur.getDate()+1)){
+      if(cur.getFullYear()===y&&cur.getMonth()===m){
+        var k=cur.getDate();if(!byDay[k])byDay[k]=[];
+        if(!byDay[k].find(function(e){return e.event_name===ev.event_name}))byDay[k].push(ev);
+      }
+    }
+  });
+  var h=DAYS.map(function(d){return"<div class='cal-day-hdr'>"+d+"</div>"}).join("");
+  for(var i=startDow-1;i>=0;i--)h+="<div class='cal-cell other-month'><div class='cal-date'>"+(daysInPrev-i)+"</div></div>";
+  for(var d=1;d<=daysInM;d++){
+    var isT=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    var evs=byDay[d]||[];
+    var pills=evs.slice(0,2).map(function(ev){
+      var key=encEv(ev);
+      return"<button class='cal-ev-pill pill-"+catKey(ev.category)+"' onclick='event.stopPropagation();showDetail(decEv(this.dataset.ev))' data-ev='"+key+"'>"+esc(ev.event_name||"Evento")+"</button>";
+    }).join("");
+    var extra=evs.length>2?"<div style='font-size:9px;color:var(--text-light);padding-left:2px'>+"+(evs.length-2)+"</div>":"";
+    h+="<div class='cal-cell"+(isT?" is-today":"")+"'><div class='cal-date'>"+d+"</div>"+pills+extra+"</div>";
+  }
+  var total=startDow+daysInM,rem=Math.ceil(total/7)*7-total;
+  for(var i=1;i<=rem;i++)h+="<div class='cal-cell other-month'><div class='cal-date'>"+i+"</div></div>";
+  document.getElementById("cal-grid").innerHTML=h;
+}
+
+function changeMonth(delta){curDate=new Date(curDate.getFullYear(),curDate.getMonth()+delta,1);renderCalendar()}
+function goToday(){curDate=new Date();renderCalendar()}
+function filterEvents(){
+  var q=document.getElementById("search-input").value.toLowerCase().trim();
+  filteredEvents=q?allEvents.filter(function(ev){
+    return(ev.event_name||"").toLowerCase().indexOf(q)>=0
+      ||(ev.location_name||"").toLowerCase().indexOf(q)>=0
+      ||(ev.category||"").toLowerCase().indexOf(q)>=0
+      ||(ev.description||"").toLowerCase().indexOf(q)>=0;
+  }):allEvents;
+  renderFeatured();renderCalendar();
+}
+function subscribeNewsletter(){
+  var email=document.getElementById("nl-email").value.trim();
+  if(!email||email.indexOf("@")<0){alert("Inserisci un indirizzo email valido.");return}
+  alert("Grazie per l'iscrizione!");
+  document.getElementById("nl-email").value="";
+}
+async function loadEvents(){
+  try{
+    var r=await fetch(API_URL);
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    var data=await r.json();
+    allEvents=Array.isArray(data)?data:(data.events||data.records||[]);
+  }catch(e){console.error("Events load failed:",e);allEvents=[]}
+  filteredEvents=allEvents;renderFeatured();renderCalendar();
+}
+loadEvents();
+</script>
+</body>
+</html>
