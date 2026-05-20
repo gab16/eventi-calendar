@@ -739,7 +739,7 @@ function renderFeaturedHome(){
   var cat=catKey(ev.category);
   var ds=ev.date_start?new Date(ev.date_start).toLocaleDateString("it-IT",{day:"numeric",month:"short"}):"";
   el.innerHTML="<div class='featured-label'>In evidenza</div>"
-    +"<div class='featured-flyer' onclick='showFeaturedEvent(""+ev.id+"")'>"
+    +"<div class='featured-flyer' onclick='showFeaturedEvent(\""+ev.id+"\")'>"
     +(img?"<img src='"+esc(img)+"' alt='"+esc(ev.event_name||"")+"' loading='lazy'/>":"<div class='featured-flyer-ph'>&#127807;</div>")
     +"<div class='featured-info'>"
     +"<div class='featured-name'>"+esc(ev.event_name||"Evento")+"</div>"
