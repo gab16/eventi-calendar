@@ -95,6 +95,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 .ps-wellness{background:#fce8e8;color:#b01030}.ps-culture{background:#e8e8d5;color:#5a6600}
 .ps-sport{background:#e8eeff;color:#1840c4}.ps-other{background:#e8e8e8;color:#555}
 .empty-day{text-align:center;padding:48px 24px;color:var(--tl)}
+.search-results{padding:0 12px 16px}
+.sr-header{padding:12px 16px 8px;font-size:13px;color:var(--tl)}
+.search-wrap{position:relative;flex:1}
+.search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--cd);border-radius:50%;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;color:var(--tm)}
+.search-clear.show{display:flex}
 .empty-day-icon{font-size:40px;margin-bottom:12px}
 .empty-day-text{font-size:14px}
 
@@ -160,7 +165,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 
   <!-- FILTER BAR (toggled) -->
   <div class="filterbar" id="filterbar">
-    <input class="filter-search" id="search-input" type="text" placeholder="Cerca eventi..." oninput="applyFilters()"/>
+    <div class="search-wrap"><input class="filter-search" id="search-input" type="text" placeholder="Cerca eventi..." oninput="applyFilters()"/><button class="search-clear" id="search-clear" onclick="clearSearch()">&#10005;</button></div>
   </div>
   <div class="cat-chips" id="cat-chips-bar" style="display:none;padding:6px 12px;background:var(--w);border-bottom:1px solid var(--cd)"></div>
 
@@ -175,7 +180,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
       <button class="cal-today-btn" onclick="goToday()">Oggi</button>
     </div>
     <div class="scroll-area">
-      <div class="cal-grid" id="cal-grid"></div>
+      <div id="search-results" style="display:none"></div>
+      <div id="cal-area">
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
     </div>
   </div>
 
@@ -268,11 +276,17 @@ var SVG_CLK='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle
 var SVG_TKT='<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="10" rx="2" stroke="#718096" stroke-width="1.5"/><path d="M5 4V2.5a1 1 0 012 0V4M9 4V2.5a1 1 0 012 0V4" stroke="#718096" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
 // NAVIGATION
-function showScreen(id){
+function showScreen(id,noPush){
   document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active")});
   document.getElementById("screen-"+id).classList.add("active");
   curScreen=id;
+  if(!noPush)history.pushState({screen:id},"","#"+id);
 }
+window.addEventListener("popstate",function(e){
+  if(e.state&&e.state.screen){showScreen(e.state.screen,true)}
+  else{showScreen("cal",true);selDay=null;renderCal()}
+});
+history.replaceState({screen:"cal"},"","#cal");
 function goHome(){showScreen("cal");selDay=null;renderCal()}
 function goAdd(){showScreen("add");resetAdd()}
 function goBackFromEvent(){
@@ -296,13 +310,90 @@ function renderChips(){
 function setCat(c){activeCat=c;renderChips();applyFilters()}
 function applyFilters(){
   var q=(document.getElementById("search-input").value||"").toLowerCase().trim();
+  var xb=document.getElementById("search-clear");
+  if(xb)xb.classList.toggle("show",q.length>0);
   filtered=allEvents.filter(function(ev){
     if(activeCat&&catLabel(ev.category)!==activeCat)return false;
     if(q&&(ev.event_name||"").toLowerCase().indexOf(q)<0&&(ev.location_name||"").toLowerCase().indexOf(q)<0&&(ev.category||"").toLowerCase().indexOf(q)<0)return false;
     return true;
   });
-  renderCal();
-  if(curScreen==="day"&&selDay)renderDay();
+  if(q||activeCat){
+    showSearchResults();
+  }else{
+    document.getElementById("search-results").style.display="none";
+    document.getElementById("cal-area").style.display="";
+    renderCal();
+  }
+}
+
+function clearSearch(){
+  document.getElementById("search-input").value="";
+  activeCat=null;
+  if(document.getElementById("cat-chips-bar").style.display!=="none")renderChips();
+  applyFilters();
+}
+
+function showSearchResults(){
+  document.getElementById("cal-area").style.display="none";
+  var sr=document.getElementById("search-results");
+  sr.style.display="block";
+  var now=new Date().toISOString().slice(0,10);
+  var upcoming=filtered.filter(function(e){return(e.date_end||e.date_start||"")>=now});
+  upcoming.sort(function(a,b){return(a.date_start||"").localeCompare(b.date_start||"")});
+  if(!upcoming.length){
+    sr.innerHTML="<div class='empty-day'><div class='empty-day-icon'>&#128269;</div><div class='empty-day-text'>Nessun evento trovato</div></div>";
+    return;
+  }
+  sr.innerHTML="<div class='sr-header'>"+upcoming.length+" risultat"+(upcoming.length===1?"o":"i")+"</div><div class='search-results day-list'>"+
+    upcoming.map(function(ev,i){
+      var cat=catKey(ev.category);
+      var img=ev.flyer_image||ev.flyer_thumb||"";
+      var ds=ev.date_start?new Date(ev.date_start).toLocaleDateString("it-IT",{day:"numeric",month:"short"}):"";
+      return"<div class='day-card' onclick='tapSearchResult("+i+")'>"
+        +"<div class='day-card-thumb'>"+(img?"<img src='"+esc(img)+"' loading='lazy'/>":"<div class='day-card-ph'>&#127807;</div>")+"</div>"
+        +"<div class='day-card-info'>"
+        +"<div class='day-card-name'>"+esc(ev.event_name||"Evento")+"</div>"
+        +"<div class='day-card-meta'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span>"
+        +(ds?"<span>"+ds+"</span>":"")
+        +(ev.time_start?"<span>"+esc(ev.time_start)+"</span>":"")
+        +"<span>"+esc(ev.location_name||"")+"</span></div>"
+        +"</div></div>";
+    }).join("")+"</div>";
+  window._searchResults=upcoming;
+}
+
+function tapSearchResult(idx){
+  var ev=window._searchResults[idx];
+  if(!ev)return;
+  selDay=new Date(ev.date_start);
+  selDayStr=ev.date_start;
+  var evs=filtered.filter(function(e){
+    if(!e.date_start)return false;
+    var s=e.date_start,end=e.date_end||s;
+    return selDayStr>=s&&selDayStr<=end;
+  });
+  var targetIdx=evs.findIndex(function(e){return e.id===ev.id});
+  if(targetIdx<0)targetIdx=0;
+  document.getElementById("event-back-label").textContent=selDay.toLocaleDateString("it-IT",{day:"numeric",month:"long"});
+  var ordered=[evs[targetIdx]].concat(evs.filter(function(_,i){return i!==targetIdx}));
+  var h="";
+  ordered.forEach(function(ev2,i){
+    var cat2=catKey(ev2.category);
+    var img2=ev2.flyer_image||ev2.flyer_thumb||"";
+    var price2=ev2.price?(String(ev2.price)==="0"?"Gratuito":ev2.price):"Gratuito";
+    if(i>0)h+="<div class='ev-sep'></div><div style='padding:0 16px'><div class='ev-next-label'>Anche oggi</div></div>";
+    h+=(img2?"<img class='ev-flyer' src='"+esc(img2)+"' alt='"+esc(ev2.event_name||"")+"'/>":"<div class='ev-flyer-ph'>&#127807;</div>");
+    h+="<div class='ev-body'><div class='ev-pill-row'><span class='pill-sm ps-"+cat2+"'>"+catLabel(ev2.category)+"</span></div>";
+    h+="<div class='ev-name'>"+esc(ev2.event_name||"Evento")+"</div>";
+    h+="<div class='ev-row'>"+SVG_CAL+"<span>"+fmtDate(ev2.date_start,ev2.date_end)+"</span></div>";
+    h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev2.location_name||ev2.address||"\u2014")+"</span></div>";
+    if(ev2.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev2.time_start)+"</span></div>";
+    h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price2)+"</span></div>";
+    if(ev2.description)h+="<div class='ev-desc'>"+esc(ev2.description)+"</div>";
+    h+="</div>";
+  });
+  document.getElementById("event-content").innerHTML=h;
+  showScreen("event");
 }
 
 // CALENDAR
@@ -458,11 +549,10 @@ async function handleFile(input){
     area.innerHTML="<div class='upload-box'><img class='upload-preview' src='"+dataUrl+"'/><div class='upload-status'>Analisi AI in corso...</div><div class='upload-phase'>Estrazione dati dal volantino</div><div class='progress-bar'><div class='progress-fill' id='prog' style='width:20%'></div></div></div>";
 
     // Send to Flowise
-    var b64=dataUrl.split(",")[1];
     var resp=await fetch(FLOWISE,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({question:"Extract event data from this image",uploads:[{data:"data:image/jpeg;base64,"+b64,type:"file:full",name:"flyer.jpg",mime:"image/jpeg"}]})
+      body:JSON.stringify({question:"Extract event details from this flyer and save to Airtable.",uploads:[{data:dataUrl,type:"file",name:"flyer.jpg",mime:"image/jpeg"}]})
     });
 
     document.getElementById("prog").style.width="60%";
@@ -489,21 +579,26 @@ async function handleFile(input){
     if(recordId){
       area.querySelector(".upload-phase").textContent="Caricamento immagine...";
       try{
+        var b64only=dataUrl.split(",")[1];
         await fetch(UPLOAD_API,{
           method:"POST",
           headers:{"Content-Type":"application/json","X-Admin-Password":ADMIN_PW},
-          body:JSON.stringify({recordId:recordId,base64:b64,filename:"flyer.jpg",contentType:"image/jpeg"})
+          body:JSON.stringify({recordId:recordId,base64:b64only,filename:"flyer.jpg",contentType:"image/jpeg"})
         });
       }catch(e){console.warn("Image attach failed:",e)}
     }
 
     document.getElementById("prog").style.width="100%";
     setTimeout(function(){
-      area.innerHTML="<div class='upload-done'><div class='upload-done-icon'>&#9989;</div><div class='upload-done-text'>Evento aggiunto!</div><div style='font-size:13px;color:var(--tl);margin-top:4px;text-align:center'>Il tuo evento apparir&agrave; sul calendario dopo approvazione.</div><button class='btn-back' onclick='goHome();loadEvents()'>Torna al calendario</button></div>";
+      var evName="";
+      try{var p=JSON.parse(text);if(Array.isArray(p)&&p[0])evName=p[0].event_name||"";else if(p.event_name)evName=p.event_name}catch(e){}
+      area.innerHTML="<div class='upload-done'><div class='upload-done-icon'>&#9989;</div><div class='upload-done-text'>Evento aggiunto!</div>"
+        +(evName?"<div style='font-size:14px;color:var(--tm);margin-top:4px;text-align:center;font-weight:600'>"+esc(evName)+"</div>":"")
+        +"<div style='font-size:13px;color:var(--tl);margin-top:4px;text-align:center'>Apparir&agrave; sul calendario dopo approvazione.</div><button class='btn-back' onclick='goHome();loadEvents()'>Torna al calendario</button></div>";
     },600);
 
   }catch(e){
-    area.innerHTML="<div class='upload-box'><div style='font-size:36px;margin-bottom:12px'>&#9888;</div><div class='upload-status' style='color:#c00'>Errore: "+esc(e.message)+"</div><button class='btn-back' onclick='resetAdd()' style='margin-top:16px'>Riprova</button></div>";
+    area.innerHTML="<div class='upload-box'><div style='font-size:36px;margin-bottom:12px'>&#9888;</div><div class='upload-status' style='color:#c00'>Errore: "+esc(e.message)+"</div><div style='font-size:11px;color:var(--tl);margin-top:8px;word-break:break-all;max-height:80px;overflow:auto'>"+(e.detail||"")+"</div><button class='btn-back' onclick='resetAdd()' style='margin-top:16px'>Riprova</button></div>";
   }
 }
 
