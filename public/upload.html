@@ -146,26 +146,27 @@ function App(){
     if(inputRef.current)inputRef.current.value='';
   }
 
-  function extractRecordId(flowiseJson){
-    try{
-      const tools = flowiseJson?.usedTools || [];
-      for(const t of tools){
-        if(!t.toolOutput) continue;
-        let out = t.toolOutput;
-        if(typeof out==='string'){
-          try{ out = JSON.parse(out) }catch(e){}
-        }
-        if(Array.isArray(out)){
-          for(const row of out){
-            if(row.id) return {id: row.id, created: row.created!==false, name: row.event_name};
-            if(row.skipped) return {id:null, created:false, name:row.event_name, reason:'duplicate'};
-          }
+ function extractRecordId(flowiseJson){
+  try{
+    const tools = flowiseJson?.usedTools || [];
+    for(const t of tools){
+      if(!t.toolOutput) continue;
+      let out = t.toolOutput;
+      if(typeof out==='string'){
+        try{ out = JSON.parse(out) }catch(e){}
+      }
+      if(Array.isArray(out)){
+        for(const row of out){
+          if(row.created === true && row.id)   // ← must be explicitly created
+            return {id: row.id, created: true, name: row.event_name};
+          if(row.skipped)
+            return {id:null, created:false, name:row.event_name, reason:'duplicate'};
         }
       }
-    }catch(e){}
-    return null;
-  }
-
+    }
+  }catch(e){}
+  return null;
+}
   async function submit(){
     if(!imgData)return;
     setUploading(true);setResult(null);
