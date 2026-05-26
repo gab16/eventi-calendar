@@ -783,27 +783,42 @@ function renderList(){
   var today=new Date();
   today.setHours(0,0,0,0);
   var todayStr=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
-  var upcoming=allEvents.filter(function(ev){
-    if(activeRegion&&(ev.region||"")!==activeRegion)return false;
+  var pairs=[];
+  var seen={};
+  filtered.filter(function(ev){
     if(!ev.date_start)return false;
-    var end=ev.date_end||ev.date_start;
+    var end=(ev.date_end||ev.date_start).substring(0,10);
     return end>=todayStr;
-  }).sort(function(a,b){return a.date_start<b.date_start?-1:a.date_start>b.date_start?1:0});
-  if(!upcoming.length){
-    el.innerHTML="<div class='empty-day'><div class='empty-day-icon'>📅</div><div class='empty-day-text'>Nessun evento in programma</div></div>";
+  }).forEach(function(ev){
+    var start=new Date(ev.date_start+"T12:00:00");
+    var endStr=(ev.date_end||ev.date_start).substring(0,10);
+    var end=new Date(endStr+"T12:00:00");
+    for(var d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+      var ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+      if(ds<todayStr)continue;
+      var key=ds+"__"+ev.id;
+      if(!seen[key]){seen[key]=true;pairs.push({dateStr:ds,ev:ev});}
+    }
+  });
+  pairs.sort(function(a,b){
+    if(a.dateStr!==b.dateStr)return a.dateStr<b.dateStr?-1:1;
+    return (a.ev.time_start||"")>(b.ev.time_start||"")?1:-1;
+  });
+  if(!pairs.length){
+    el.innerHTML="<div class='empty-day'><div class='empty-day-icon'>&#128197;</div><div class='empty-day-text'>Nessun evento in programma</div></div>";
     return;
   }
   var lastDate="";
   var h="";
-  upcoming.forEach(function(ev){
-    var dateLabel=ev.date_start;
-    if(dateLabel!==lastDate){
-      var d=new Date(ev.date_start);
+  pairs.forEach(function(p){
+    if(p.dateStr!==lastDate){
+      var d=new Date(p.dateStr+"T12:00:00");
       var opts={weekday:"long",day:"numeric",month:"long"};
       var label=d.toLocaleDateString("it-IT",opts);
       h+="<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#8C8578;padding:14px 4px 6px'>"+label+"</div>";
-      lastDate=dateLabel;
+      lastDate=p.dateStr;
     }
+    var ev=p.ev;
     var cat=catKey(ev.category);
     var img=ev.flyer_image||ev.flyer_thumb||"";
     h+="<div class='day-card' onclick='tapEventFromList(\""+ev.id+"\")'>"
