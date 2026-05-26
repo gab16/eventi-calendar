@@ -360,16 +360,20 @@ function renderChips(){
     CATS.map(function(c){return"<div class='cat-chip"+(activeCat===c?" active":"")+"' onclick='setCat(\""+c+"\")'>"+c+"</div>"}).join("");
 }
 function setCat(c){activeCat=c;renderChips();applyFilters()}
-function applyFilters(){
+function refilter(){
   var q=(document.getElementById("search-input").value||"").toLowerCase().trim();
-  var xb=document.getElementById("search-clear");
-  if(xb)xb.classList.toggle("show",q.length>0);
   filtered=allEvents.filter(function(ev){
     if(activeCat&&catLabel(ev.category)!==activeCat)return false;
     if(activeRegion&&(ev.region||"")!==activeRegion)return false;
     if(q&&(ev.event_name||"").toLowerCase().indexOf(q)<0&&(ev.location_name||"").toLowerCase().indexOf(q)<0&&(ev.category||"").toLowerCase().indexOf(q)<0)return false;
     return true;
   });
+}
+function applyFilters(){
+  var q=(document.getElementById("search-input").value||"").toLowerCase().trim();
+  var xb=document.getElementById("search-clear");
+  if(xb)xb.classList.toggle("show",q.length>0);
+  refilter();
   if(q||activeCat){
     showSearchResults();
   }else{
@@ -391,15 +395,8 @@ function setRegion(r){
   document.querySelectorAll(".region-chip").forEach(function(el){
     el.classList.toggle("active", el.dataset.region===(r||""));
   });
-  if(listViewActive){
-    filtered=allEvents.filter(function(ev){
-      if(activeRegion&&(ev.region||"")!==activeRegion)return false;
-      return true;
-    });
-    renderList();
-  } else {
-    applyFilters();
-  }
+  if(listViewActive){refilter();renderList();}
+  else{applyFilters();}
 }
 
 function showSearchResults(){
@@ -501,6 +498,7 @@ function renderCal(){
 function tapDay(y,m,d){
   selDay=new Date(y,m,d);
   selDayStr=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+  refilter();
   renderDay();
   showScreen("day");
 }
