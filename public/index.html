@@ -392,8 +392,8 @@ function setRegion(r){
   });
   applyFilters();
   if(listViewActive){renderList();}
-  else if(curScreen==="day"){goHome();}
-  else{
+  else if(curScreen==="day"){renderDay();}
+  else if(curScreen==="cal"){
     renderCal();
     if(document.getElementById("search-results").style.display!=="none")showSearchResults();
   }
