@@ -1,7 +1,7 @@
 {
-  "name": "Maremma Live",
-  "short_name": "MaremmaLive",
-  "description": "Scopri gli eventi della Maremma Toscana",
+  "name": "Kalendarr",
+  "short_name": "Kalendarr",
+  "description": "Scopri gli eventi vicino a te",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f5f0e8",
