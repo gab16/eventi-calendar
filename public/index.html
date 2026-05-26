@@ -76,7 +76,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 .dot-festival{background:#d97706}.dot-music{background:#7c3aed}
 .dot-market{background:#0284c7}.dot-food{background:#16a34a}
 .dot-wellness{background:#e11d48}.dot-culture{background:#6b7c00}
-.dot-sport{background:#2563eb}.dot-other{background:#999}
+.dot-sport{background:#2563eb}.dot-business{background:#b45309}.dot-nature{background:#15803d}.dot-family{background:#c026d3}.dot-other{background:#999}
 
 /* DAY VIEW */
 .day-hdr{padding:14px 16px 10px;background:var(--cream)}
@@ -95,7 +95,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 .ps-festival{background:#fde8cc;color:#954e00}.ps-music{background:#e8d5f5;color:#5c1a9e}
 .ps-market{background:#cce8f5;color:#02628a}.ps-food{background:#d5f5e3;color:#126b33}
 .ps-wellness{background:#fce8e8;color:#b01030}.ps-culture{background:#e8e8d5;color:#5a6600}
-.ps-sport{background:#e8eeff;color:#1840c4}.ps-other{background:#e8e8e8;color:#555}
+.ps-sport{background:#e8eeff;color:#1840c4}.ps-business{background:#fef3c7;color:#92400e}.ps-nature{background:#dcfce7;color:#166534}.ps-family{background:#fce7f3;color:#9d174d}.ps-other{background:#e8e8e8;color:#555}
 .empty-day{text-align:center;padding:48px 24px;color:var(--tl)}
 .search-results{padding:0 12px 16px}
 .featured-home{padding:8px 12px 20px}
@@ -202,11 +202,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
   <div class="screen active" id="screen-cal">
     <div class="cal-hdr">
       <div class="cal-nav">
-        <button class="cal-arrow" onclick="chgMonth(-1)">&#8249;</button>
+        <button class="cal-arrow" id="cal-prev-btn" onclick="chgMonth(-1)">&#8249;</button>
         <span class="cal-month" id="cal-label"></span>
-        <button class="cal-arrow" onclick="chgMonth(1)">&#8250;</button>
+        <button class="cal-arrow" id="cal-next-btn" onclick="chgMonth(1)">&#8250;</button>
       </div>
-      <button class="cal-today-btn" onclick="goToday()">Oggi</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="cal-today-btn" id="today-btn" onclick="goToday()">Oggi</button>
+        <button class="cal-today-btn" id="view-toggle-btn" onclick="toggleListView()" title="Cambia vista">&#9776;</button>
+      </div>
     </div>
     <div class="scroll-area">
       <div id="search-results" style="display:none"></div>
@@ -214,6 +217,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
         <div class="cal-grid" id="cal-grid"></div>
         <div class="featured-home" id="featured-home"></div>
       </div>
+      <div id="list-area" style="display:none;padding:12px"></div>
     </div>
   </div>
 
@@ -281,17 +285,26 @@ var activeCat=null;
 function catKey(c){
   if(!c)return"other";c=c.toLowerCase();
   if(c.indexOf("festival")>=0)return"festival";
-  if(c.indexOf("music")>=0||c.indexOf("concert")>=0)return"music";
+  if(c.indexOf("music")>=0||c.indexOf("concert")>=0||c.indexOf("musica")>=0)return"music";
   if(c.indexOf("market")>=0||c.indexOf("merca")>=0||c.indexOf("fiera")>=0)return"market";
   if(c.indexOf("food")>=0||c.indexOf("cibo")>=0||c.indexOf("wine")>=0||c.indexOf("vino")>=0||c.indexOf("gastr")>=0)return"food";
   if(c.indexOf("well")>=0||c.indexOf("benes")>=0)return"wellness";
-  if(c.indexOf("cult")>=0||c.indexOf("arte")>=0||c.indexOf("teatro")>=0)return"culture";
+  if(c.indexOf("cult")>=0||c.indexOf("arte")>=0||c.indexOf("teatro")>=0||c.indexOf("art")>=0)return"culture";
   if(c.indexOf("sport")>=0)return"sport";
+  if(c.indexOf("business")>=0||c.indexOf("affari")>=0||c.indexOf("lavoro")>=0||c.indexOf("conferenz")>=0||c.indexOf("convegno")>=0)return"business";
+  if(c.indexOf("natur")>=0||c.indexOf("escurs")>=0||c.indexOf("hike")>=0||c.indexOf("outdoor")>=0)return"nature";
+  if(c.indexOf("bambin")>=0||c.indexOf("famig")>=0||c.indexOf("child")>=0||c.indexOf("family")>=0||c.indexOf("kids")>=0)return"family";
   return"other";
 }
+var CAT_LABELS={
+  it:{festival:"Festival",music:"Musica",market:"Mercato",food:"Food & Vino",wellness:"Benessere",culture:"Cultura",sport:"Sport",business:"Business",nature:"Natura",family:"Famiglia",other:"Altro"},
+  en:{festival:"Festival",music:"Music",market:"Market",food:"Food & Wine",wellness:"Wellness",culture:"Culture",sport:"Sport",business:"Business",nature:"Nature",family:"Family",other:"Other"}
+};
+function curLang(){var btn=document.getElementById("lang-toggle");return btn&&btn.textContent==="EN"?"en":"it";}
 function catLabel(c){
-  var m={festival:"Festival",music:"Musica",market:"Mercato",food:"Food & Wine",wellness:"Wellness",culture:"Cultura",sport:"Sport",other:"Altro"};
-  return m[catKey(c)]||c||"Altro";
+  var lang=curLang();
+  var m=CAT_LABELS[lang]||CAT_LABELS.it;
+  return m[catKey(c)]||c||m.other;
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function fmtDate(s,e){
@@ -714,10 +727,99 @@ if(sessionStorage.getItem("ml_auth")==="1"){
   document.getElementById("app").style.display="flex";
 }
 
+var listViewActive=false;
+function toggleListView(){
+  listViewActive=!listViewActive;
+  var btn=document.getElementById("view-toggle-btn");
+  var calArea=document.getElementById("cal-area");
+  var listArea=document.getElementById("list-area");
+  var prevBtn=document.getElementById("cal-prev-btn");
+  var nextBtn=document.getElementById("cal-next-btn");
+  var todayBtn=document.getElementById("today-btn");
+  if(listViewActive){
+    btn.textContent="📅";
+    calArea.style.display="none";
+    listArea.style.display="block";
+    prevBtn.style.visibility="hidden";
+    nextBtn.style.visibility="hidden";
+    todayBtn.style.visibility="hidden";
+    document.getElementById("cal-label").textContent="Prossimi eventi";
+    renderList();
+  } else {
+    btn.textContent="☰";
+    calArea.style.display="";
+    listArea.style.display="none";
+    prevBtn.style.visibility="";
+    nextBtn.style.visibility="";
+    todayBtn.style.visibility="";
+    renderCal();
+  }
+}
+function renderList(){
+  var el=document.getElementById("list-area");
+  var today=new Date();
+  today.setHours(0,0,0,0);
+  var todayStr=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+  var upcoming=filtered.filter(function(ev){
+    if(!ev.date_start)return false;
+    var end=ev.date_end||ev.date_start;
+    return end>=todayStr;
+  }).sort(function(a,b){return a.date_start<b.date_start?-1:a.date_start>b.date_start?1:0});
+  if(!upcoming.length){
+    el.innerHTML="<div class='empty-day'><div class='empty-day-icon'>📅</div><div class='empty-day-text'>Nessun evento in programma</div></div>";
+    return;
+  }
+  var lastDate="";
+  var h="";
+  upcoming.forEach(function(ev){
+    var dateLabel=ev.date_start;
+    if(dateLabel!==lastDate){
+      var d=new Date(ev.date_start);
+      var opts={weekday:"long",day:"numeric",month:"long"};
+      var label=d.toLocaleDateString("it-IT",opts);
+      h+="<div style='font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#8C8578;padding:14px 4px 6px'>"+label+"</div>";
+      lastDate=dateLabel;
+    }
+    var cat=catKey(ev.category);
+    var img=ev.flyer_image||ev.flyer_thumb||"";
+    h+="<div class='day-card' onclick='tapEventFromList(""+ev.id+"")'>"
+      +"<div class='day-card-thumb'>"+(img?"<img src='"+esc(img)+"' loading='lazy'/>":"<div class='day-card-ph'>&#127807;</div>")+"</div>"
+      +"<div class='day-card-info'>"
+      +"<div class='day-card-name'>"+esc(ev.event_name||"Evento")+"</div>"
+      +"<div class='day-card-meta'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span>"
+      +(ev.time_start?"<span>"+esc(ev.time_start)+"</span>":"")
+      +"<span>"+esc(ev.location_name||"")+"</span></div>"
+      +"</div></div>";
+  });
+  el.innerHTML=h;
+}
+function tapEventFromList(id){
+  var ev=filtered.find(function(e){return e.id===id});
+  if(!ev)return;
+  selDay=new Date(ev.date_start);
+  selDayStr=ev.date_start;
+  document.getElementById("event-back-label").textContent=selDay.toLocaleDateString("it-IT",{day:"numeric",month:"long"});
+  var cat=catKey(ev.category);
+  var img=ev.flyer_image||ev.flyer_thumb||"";
+  var price=ev.price?(String(ev.price)==="0"?"Gratuito":ev.price):"Gratuito";
+  var h=(img?"<img class='ev-flyer' src='"+esc(img)+"' alt='"+esc(ev.event_name||"")+"'/>":"<div class='ev-flyer-ph'>&#127807;</div>");
+  h+="<div class='ev-body'>";
+  h+="<div class='ev-pill-row'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span></div>";
+  h+="<div class='ev-name'>"+esc(ev.event_name||"Evento")+"</div>";
+  h+="<div class='ev-row'>"+SVG_CAL+"<span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
+  h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||ev.address||"—")+"</span></div>";
+  if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
+  h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
+  if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
+  h+="</div>";
+  document.getElementById("event-content").innerHTML=h;
+  showScreen("event");
+}
 function toggleLang(){
   var btn=document.getElementById("lang-toggle");
   if(btn.textContent==="IT"){btn.textContent="EN";btn.style.background="rgba(255,255,255,0.3)"}
   else{btn.textContent="IT";btn.style.background="rgba(255,255,255,0.15)"}
+  if(listViewActive)renderList();else renderCal();
 }
 
 async function loadEvents(){

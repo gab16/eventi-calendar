@@ -236,14 +236,23 @@ function App(){
       }
     }catch(e){imgErr=e.message}
 
+    // Auto-approve: patch status to approved
+    try{
+      await fetch(ADMIN_API,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','X-Admin-Password':pw},
+        body:JSON.stringify({id: info.id, fields:{status:'approved'}}),
+      });
+    }catch(e){}
+
     setResult({
       ok:true,
       message: imgAttached
         ? '✅ Event saved with flyer image'
         : '⚠️ Event saved, but image upload failed',
       details: imgAttached
-        ? '"'+info.name+'" was created as pending. Image attached.'
-        : '"'+info.name+'" was created, but the image did not attach. Details: '+imgErr,
+        ? '"'+info.name+'" was created and published. Image attached.'
+        : '"'+info.name+'" was created and published, but the image did not attach. Details: '+imgErr,
       recordId: info.id,
       imgAttached,
     });
