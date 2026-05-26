@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalendarr - Transform Your Calendar Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            margin-left: 20px;
+        }
+
+        .cta-button {
+            background-color: #6C5CE7;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #6C5CE7, #a8a4e6);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 20px;
+            background-color: #f9f9f9;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 80px 20px;
+            background-color: #6C5CE7;
+            color: white;
+            text-align: center;
+        }
+
+        /* Testimonials Section */
+        .testimonials {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 80px 20px;
+            background-color: #f9f9f9;
+        }
+
+        .price-card {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <nav>
+            <div class="logo">Kalendarr</div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#contact">Contact</a>
+                <a href="#" class="cta-button">Get Started</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Kalendarr 📅<br><span style="font-size: 1.5rem;">Simplify, Automate, Elevate Your Calendar Management</span></h1>
+        <p>Transform your calendar management with AI-powered automation, real-time analytics, and seamless social media integration.</p>
+        <div class="cta-buttons">
+            <a href="#" class="cta-button">Start Free Trial</a>
+            <a href="#" style="color: white; text-decoration: none;">Learn More</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2>What Makes Kalendarr Unique?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div style="font-size: 3rem;">🤖</div>
+                <h3>AI-Powered Automation</h3>
+                <p>Automate scheduling, reminders, and calendar updates in one click.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">🌐</div>
+                <h3>Social Media Integration</h3>
+                <p>Sync your events with Facebook, Instagram, Twitter, and LinkedIn.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">📊</div>
+                <h3>Real-Time Analytics</h3>
+                <p>Track event performance, attendee engagement, and ROI instantly.</p>
+            </div>
+            <div class="feature-card">
+                <div style="font-size: 3rem;">✏️</div>
+                <h3>Customizable Templates</h3>
+                <p>Choose from 100+ templates or create your own unique calendar design.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Ready to Take Control of Your Calendar?</h2>
+        <p>Join thousands of users who have already transformed their calendar management with Kalendarr.</p>
+        <a href="#" class="cta-button">Sign Up Today</a>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <h2>What Our Users Say</h2>
+        <div class="testimonial-grid">
+            <div>
+                *"Kalendarr has revolutionized how we manage events. It’s intuitive, powerful, and saves us hours every week."*<br>
+                - John Smith, Event Manager at TechCorp
+            </div>
+            <div>
+                *"The best calendar tool I’ve ever used. Integration with social media is seamless!"*<br>
+                - Sarah Johnson, Marketing Director
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <h2>Simple, Transparent Pricing</h2>
+        <div class="price-card">
+            <h3>Free Plan</h3>
+            <p>Basic features: 1 calendar, limited templates, and 3-day event history.</p>
+            <a href="#" class="cta-button">Start Free</a>
+        </div>
+        <div class="price-card">
+            <h3>Pro Plan</h3>
+            <p>$9.99/month</p>
+            <ul style="list-style: none; margin: 20px 0;">
+                <li>Unlimited calendars</li>
+                <li>Premium templates</li>
+                <li>Advanced analytics</li>
+                <li>Priority support</li>
+            </ul>
+            <a href="#" class="cta-button">Upgrade Now</a>
+        </div>
+        <div class="price-card">
+            <h3>Business Plan</h3>
+            <p>$19.99/month</p>
+            <ul style="list-style: none; margin: 20px 0;">
+                <li>Everything in Pro</li>
+                <li>Team collaboration</li>
+                <li>Custom branding</li>
+                <li>24/7 support</li>
+            </ul>
+            <a href="#" class="cta-button">Get Started</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div>
+                Legal Links:<br>
+                <a href="#" style="color: white; text-decoration: none;">Privacy Policy</a> | 
+                <a href="#" style="color: white; text-decoration: none;">Terms of Service</a> | 
+                <a href="#" style="color: white; text-decoration: none;">Contact Us</a>
+            </div>
+            <div>
+                Social Media:<br>
+                <a href="#" style="color: white; text-decoration: none;">Facebook 🐘</a> | 
+                <a href="#" style="color: white; text-decoration: none;">Twitter 🐦</a> | 
+                <a href="#" style="color: white; text-decoration: none;">Instagram 📸</a> | 
+                <a href="#" style="color: white; text-decoration: none;">LinkedIn 💼</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
