@@ -197,6 +197,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
     <div class="search-wrap"><input class="filter-search" id="search-input" type="text" placeholder="Cerca eventi..." oninput="applyFilters()"/><button class="search-clear" id="search-clear" onclick="clearSearch()">&#10005;</button></div>
   </div>
   <div class="cat-chips" id="cat-chips-bar" style="display:none;padding:6px 12px;background:var(--w);border-bottom:1px solid var(--cd)"></div>
+  <div class="cat-chips" id="region-chips-bar" style="padding:6px 12px;background:var(--w);border-bottom:1px solid var(--cd)">
+    <div class="cat-chip region-chip active" data-region="" onclick="setRegion(null)">Tutti</div>
+    <div class="cat-chip region-chip" data-region="Toscana" onclick="setRegion('Toscana')">Toscana</div>
+    <div class="cat-chip region-chip" data-region="Zurich" onclick="setRegion('Zurich')">Zurich</div>
+    <div class="cat-chip region-chip" data-region="New York" onclick="setRegion('New York')">New York</div>
+  </div>
 
   <!-- SCREEN: CALENDAR -->
   <div class="screen active" id="screen-cal">
@@ -281,6 +287,8 @@ var DAYS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 var allEvents=[],filtered=[],curDate=new Date(),selDay=null,selDayStr="",curScreen="cal";
 var CATS=["Festival","Musica","Mercato","Food & Wine","Wellness","Cultura","Sport"];
 var activeCat=null;
+var REGIONS=["Toscana","Zurich","New York"];
+var activeRegion=null;
 
 function catKey(c){
   if(!c)return"other";c=c.toLowerCase();
@@ -358,6 +366,7 @@ function applyFilters(){
   if(xb)xb.classList.toggle("show",q.length>0);
   filtered=allEvents.filter(function(ev){
     if(activeCat&&catLabel(ev.category)!==activeCat)return false;
+    if(activeRegion&&(ev.region||"")!==activeRegion)return false;
     if(q&&(ev.event_name||"").toLowerCase().indexOf(q)<0&&(ev.location_name||"").toLowerCase().indexOf(q)<0&&(ev.category||"").toLowerCase().indexOf(q)<0)return false;
     return true;
   });
@@ -375,6 +384,13 @@ function clearSearch(){
   activeCat=null;
   if(document.getElementById("cat-chips-bar").style.display!=="none")renderChips();
   applyFilters();
+}
+function setRegion(r){
+  activeRegion=r;
+  document.querySelectorAll(".region-chip").forEach(function(el){
+    el.classList.toggle("active", el.dataset.region===(r||""));
+  });
+  if(listViewActive)renderList();else{applyFilters();}
 }
 
 function showSearchResults(){

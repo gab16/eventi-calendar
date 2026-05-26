@@ -39,6 +39,7 @@ const{useState,useRef,useEffect}=React;
 const FLOWISE_URL='https://flowise.tattionline.com/api/v1/prediction/f3d22287-f6bf-47df-8403-7c7098b8e067';
 const ADMIN_API='/api/admin';
 const UPLOAD_API='/api/upload';
+const REGION=new URLSearchParams(window.location.search).get('region')||'';
 
 function imgToJpeg(img, MAX=1600, Q=0.82){
   let w=img.width||img.naturalWidth, h=img.height||img.naturalHeight;
@@ -236,12 +237,14 @@ function App(){
       }
     }catch(e){imgErr=e.message}
 
-    // Auto-approve: patch status to approved
+    // Auto-approve and tag region
     try{
+      const patchFields={status:'approved'};
+      if(REGION)patchFields.region=REGION;
       await fetch(ADMIN_API,{
         method:'PATCH',
         headers:{'Content-Type':'application/json','X-Admin-Password':pw},
-        body:JSON.stringify({id: info.id, fields:{status:'approved'}}),
+        body:JSON.stringify({id: info.id, fields:patchFields}),
       });
     }catch(e){}
 
