@@ -783,7 +783,8 @@ function renderList(){
   var today=new Date();
   today.setHours(0,0,0,0);
   var todayStr=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
-  var upcoming=filtered.filter(function(ev){
+  var upcoming=allEvents.filter(function(ev){
+    if(activeRegion&&(ev.region||"")!==activeRegion)return false;
     if(!ev.date_start)return false;
     var end=ev.date_end||ev.date_start;
     return end>=todayStr;
