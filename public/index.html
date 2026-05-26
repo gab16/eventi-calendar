@@ -390,7 +390,13 @@ function setRegion(r){
   document.querySelectorAll(".region-chip").forEach(function(el){
     el.classList.toggle("active", el.dataset.region===(r||""));
   });
-  if(listViewActive)renderList();else{applyFilters();}
+  applyFilters();
+  if(listViewActive){renderList();}
+  else if(curScreen==="day"){goHome();}
+  else{
+    renderCal();
+    if(document.getElementById("search-results").style.display!=="none")showSearchResults();
+  }
 }
 
 function showSearchResults(){
