@@ -375,7 +375,8 @@ function applyFilters(){
   }else{
     document.getElementById("search-results").style.display="none";
     document.getElementById("cal-area").style.display="";
-    renderCal();
+    if(curScreen==="day")renderDay();
+    else renderCal();
   }
 }
 
@@ -390,12 +391,14 @@ function setRegion(r){
   document.querySelectorAll(".region-chip").forEach(function(el){
     el.classList.toggle("active", el.dataset.region===(r||""));
   });
-  applyFilters();
-  if(listViewActive){renderList();}
-  else if(curScreen==="day"){renderDay();}
-  else if(curScreen==="cal"){
-    renderCal();
-    if(document.getElementById("search-results").style.display!=="none")showSearchResults();
+  if(listViewActive){
+    filtered=allEvents.filter(function(ev){
+      if(activeRegion&&(ev.region||"")!==activeRegion)return false;
+      return true;
+    });
+    renderList();
+  } else {
+    applyFilters();
   }
 }
 
