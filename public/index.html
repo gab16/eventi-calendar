@@ -782,7 +782,7 @@ function renderList(){
     }
     var cat=catKey(ev.category);
     var img=ev.flyer_image||ev.flyer_thumb||"";
-    h+="<div class='day-card' onclick='tapEventFromList(""+ev.id+"")'>"
+    h+="<div class='day-card' onclick='tapEventFromList(\""+ev.id+"\")'>"
       +"<div class='day-card-thumb'>"+(img?"<img src='"+esc(img)+"' loading='lazy'/>":"<div class='day-card-ph'>&#127807;</div>")+"</div>"
       +"<div class='day-card-info'>"
       +"<div class='day-card-name'>"+esc(ev.event_name||"Evento")+"</div>"
