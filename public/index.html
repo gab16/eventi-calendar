@@ -199,7 +199,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
   <div class="cat-chips" id="cat-chips-bar" style="display:none;padding:6px 12px;background:var(--w);border-bottom:1px solid var(--cd)"></div>
   <div class="cat-chips" id="region-chips-bar" style="padding:6px 12px;background:var(--w);border-bottom:1px solid var(--cd)">
     <div class="cat-chip region-chip active" data-region="" onclick="setRegion(null)">Tutti</div>
-    <div class="cat-chip region-chip" data-region="Toscana" onclick="setRegion('Toscana')">Toscana</div>
+    <div class="cat-chip region-chip" data-region="Maremma" onclick="setRegion('Maremma')">Maremma</div>
     <div class="cat-chip region-chip" data-region="Zurich" onclick="setRegion('Zurich')">Zurich</div>
     <div class="cat-chip region-chip" data-region="New York" onclick="setRegion('New York')">New York</div>
   </div>
@@ -287,7 +287,7 @@ var DAYS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 var allEvents=[],filtered=[],curDate=new Date(),selDay=null,selDayStr="",curScreen="cal";
 var CATS=["Festival","Musica","Mercato","Food & Wine","Wellness","Cultura","Sport"];
 var activeCat=null;
-var REGIONS=["Toscana","Zurich","New York"];
+var REGIONS=["Maremma","Zurich","New York"];
 var activeRegion=null;
 
 function catKey(c){
