@@ -29,25 +29,37 @@ export default async function handler(req, res) {
     }
 
     const data = await resp.json();
-    const events = (data.list || []).map(f => ({
-      id: f.Id,
-      event_name: f.event_name || '',
-      date_start: (f.date_start || '').slice(0, 10),
-      date_end: f.date_end ? f.date_end.slice(0, 10) : null,
-      time_start: f.time_start || '',
-      location_name: f.location_name || '',
-      address: f.address || '',
-      category: f.category || '',
-      organizer: f.organizer || '',
-      price: f.price || '',
-      description: f.description || '',
-      language: f.language || '',
-      phone: f.phone || '',
-      is_sponsored: !!f.is_sponsored,
-      region: f.region || '',
-      flyer_image: f.flyer_image ? JSON.parse(f.flyer_image)[0]?.url || null : null,
-      flyer_thumb: f.flyer_image ? JSON.parse(f.flyer_image)[0]?.thumbnails?.large?.url || null : null,
-    }));
+
+    const parseAttachment = (val) => {
+      if (!val) return null;
+      try {
+        const arr = typeof val === 'string' ? JSON.parse(val) : val;
+        return Array.isArray(arr) && arr.length > 0 ? arr[0] : null;
+      } catch { return null; }
+    };
+
+    const events = (data.list || []).map(f => {
+      const attachment = parseAttachment(f.flyer_image);
+      return {
+        id: f.Id,
+        event_name: f.event_name || '',
+        date_start: (f.date_start || '').slice(0, 10),
+        date_end: f.date_end ? f.date_end.slice(0, 10) : null,
+        time_start: f.time_start || '',
+        location_name: f.location_name || '',
+        address: f.address || '',
+        category: f.category || '',
+        organizer: f.organizer || '',
+        price: f.price || '',
+        description: f.description || '',
+        language: f.language || '',
+        phone: f.phone || '',
+        is_sponsored: !!f.is_sponsored,
+        region: f.region || '',
+        flyer_image: attachment?.url || null,
+        flyer_thumb: attachment?.thumbnails?.large?.url || attachment?.url || null,
+      };
+    });
 
     res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
     return res.status(200).json({ events, count: events.length });
