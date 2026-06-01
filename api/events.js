@@ -34,8 +34,19 @@ export default async function handler(req, res) {
       if (!val) return null;
       try {
         const arr = typeof val === 'string' ? JSON.parse(val) : val;
-        return Array.isArray(arr) && arr.length > 0 ? arr[0] : null;
+        if (!Array.isArray(arr) || arr.length === 0) return null;
+        return arr[0];
       } catch { return null; }
+    };
+
+    const imgUrl = (attachment, size) => {
+      if (!attachment) return null;
+      // NocoDB uses signedPath for temporary URLs
+      const path = size && attachment.thumbnails?.[size]?.signedPath
+        ? attachment.thumbnails[size].signedPath
+        : attachment.signedPath || attachment.path;
+      if (!path) return null;
+      return `${NOCODB_URL}/${path}`;
     };
 
     const events = (data.list || []).map(f => {
@@ -56,8 +67,8 @@ export default async function handler(req, res) {
         phone: f.phone || '',
         is_sponsored: !!f.is_sponsored,
         region: f.region || '',
-        flyer_image: attachment?.url || null,
-        flyer_thumb: attachment?.thumbnails?.large?.url || attachment?.url || null,
+        flyer_image: imgUrl(attachment, null),
+        flyer_thumb: imgUrl(attachment, 'card_cover'),
       };
     });
 
