@@ -18,6 +18,22 @@ export default async function handler(req, res) {
   const baseUrl = `${NOCODB_URL}/api/v1/db/data/noco/${BASE_ID}/${EVENTS_TABLE}`;
   const headers = { 'xc-token': NOCODB_TOKEN, 'Content-Type': 'application/json' };
 
+  function parseAttachment(val) {
+    try {
+      const arr = typeof val === 'string' ? JSON.parse(val) : val;
+      if (!Array.isArray(arr) || arr.length === 0) return { url: null, thumb: null };
+      const a = arr[0];
+      const base = NOCODB_URL;
+      const url = a.signedPath ? `${base}/${a.signedPath}` : (a.url || null);
+      const thumb = a.thumbnails?.card_cover?.signedPath
+        ? `${base}/${a.thumbnails.card_cover.signedPath}`
+        : (a.thumbnails?.large?.url || url);
+      return { url, thumb };
+    } catch (e) {
+      return { url: null, thumb: null };
+    }
+  }
+
   if (req.method === 'GET') {
     try {
       let allRecords = [];
@@ -25,33 +41,39 @@ export default async function handler(req, res) {
       let hasMore = true;
       while (hasMore) {
         const resp = await fetch(`${baseUrl}?limit=100&offset=${(page-1)*100}&sort=-date_start`, { headers });
-        if (!resp.ok) return res.status(resp.status).json({ error: 'NocoDB error' });
+        if (!resp.ok) {
+          const detail = await resp.text();
+          return res.status(resp.status).json({ error: 'NocoDB error', detail });
+        }
         const data = await resp.json();
         allRecords = allRecords.concat(data.list || []);
         hasMore = data.pageInfo?.isLastPage === false;
         page++;
       }
-      const events = allRecords.map(f => ({
-        id: f.Id,
-        event_name: f.event_name || '',
-        date_start: (f.date_start || '').slice(0, 10),
-        date_end: f.date_end ? f.date_end.slice(0, 10) : null,
-        time_start: f.time_start || '',
-        location_name: f.location_name || '',
-        address: f.address || '',
-        category: f.category || '',
-        organizer: f.organizer || '',
-        price: f.price || '',
-        description: f.description || '',
-        language: f.language || '',
-        phone: f.phone || '',
-        confidence: f.confidence || '',
-        status: f.status || 'pending',
-        is_sponsored: !!f.is_sponsored,
-        region: f.region || '',
-        flyer_image: f.flyer_image ? JSON.parse(f.flyer_image)[0]?.url || null : null,
-        flyer_thumb: f.flyer_image ? JSON.parse(f.flyer_image)[0]?.thumbnails?.large?.url || null : null,
-      }));
+      const events = allRecords.map(f => {
+        const { url, thumb } = parseAttachment(f.flyer_image);
+        return {
+          id: f.Id,
+          event_name: f.event_name || '',
+          date_start: (f.date_start || '').slice(0, 10),
+          date_end: f.date_end ? f.date_end.slice(0, 10) : null,
+          time_start: f.time_start || '',
+          location_name: f.location_name || '',
+          address: f.address || '',
+          category: f.category || '',
+          organizer: f.organizer || '',
+          price: f.price || '',
+          description: f.description || '',
+          language: f.language || '',
+          phone: f.phone || '',
+          confidence: f.confidence || '',
+          status: f.status || 'pending',
+          is_sponsored: !!f.is_sponsored,
+          region: f.region || '',
+          flyer_image: url,
+          flyer_thumb: thumb,
+        };
+      });
       return res.status(200).json({ events, count: events.length });
     } catch (e) {
       return res.status(502).json({ error: 'Failed to fetch', detail: e.message });
