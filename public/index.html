@@ -769,6 +769,7 @@ function onLoginSuccess(){
   document.getElementById("app").style.display="flex";
   var tu=document.getElementById("topbar-user");
   if(tu)tu.textContent=currentUser.display_name||currentUser.username;
+  selDay=null;selDayStr="";curDate=new Date();
   loadUserLikes();
   loadEvents();
 }
