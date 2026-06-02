@@ -98,14 +98,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 .ps-sport{background:#e8eeff;color:#1840c4}.ps-business{background:#fef3c7;color:#92400e}.ps-nature{background:#dcfce7;color:#166534}.ps-family{background:#fce7f3;color:#9d174d}.ps-other{background:#e8e8e8;color:#555}
 .empty-day{text-align:center;padding:48px 24px;color:var(--tl)}
 .search-results{padding:0 12px 16px}
-.featured-home{padding:8px 12px 20px}
-.featured-label{font-size:12px;font-weight:600;color:var(--tl);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
-.featured-flyer{width:100%;border-radius:var(--r);overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
-.featured-flyer img{width:100%;display:block}
-.featured-flyer-ph{width:100%;height:140px;background:linear-gradient(135deg,#c8dfc8,#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:36px}
-.featured-info{padding:10px 12px;background:var(--w);border:1px solid var(--cd);border-top:none;border-radius:0 0 var(--r) var(--r)}
-.featured-name{font-size:14px;font-weight:600;color:var(--td);margin-bottom:3px}
-.featured-meta{font-size:12px;color:var(--tl)}
+.nuovi-arrivi{padding:8px 12px 20px}
+.na-label{font-size:11px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.na-list{display:flex;flex-direction:column;gap:8px}
+.na-card{display:flex;gap:10px;align-items:center;background:var(--w);border:1px solid var(--cd);border-radius:var(--r);padding:8px;cursor:pointer;transition:transform 0.1s}
+.na-card:active{transform:scale(0.98)}
+.na-thumb{width:48px;height:48px;border-radius:6px;background:var(--cd);overflow:hidden;flex-shrink:0}
+.na-thumb img{width:100%;height:100%;object-fit:cover}
+.na-thumb-ph{width:100%;height:100%;background:linear-gradient(135deg,#c8dfc8,#d4e8c4);display:flex;align-items:center;justify-content:center;font-size:18px}
+.na-info{flex:1;min-width:0}
+.na-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.na-meta{font-size:11px;color:var(--tl);margin-top:2px}
 .sr-header{padding:12px 16px 8px;font-size:13px;color:var(--tl)}
 .search-wrap{position:relative;flex:1}
 .search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:none;background:var(--cd);border-radius:50%;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;color:var(--tm)}
@@ -210,6 +213,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
     <div class="cat-chip region-chip" data-region="Maremma" onclick="setRegion('Maremma')">Maremma</div>
     <div class="cat-chip region-chip" data-region="Zurich" onclick="setRegion('Zurich')">Zurich</div>
     <div class="cat-chip region-chip" data-region="New York" onclick="setRegion('New York')">New York</div>
+    <div class="cat-chip region-chip" id="my-events-chip" data-region="__liked__" onclick="setRegion('__liked__')">&#10084;&#65039; My Events</div>
   </div>
 
   <!-- SCREEN: CALENDAR -->
@@ -229,7 +233,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
       <div id="search-results" style="display:none"></div>
       <div id="cal-area">
         <div class="cal-grid" id="cal-grid"></div>
-        <div class="featured-home" id="featured-home"></div>
+        <div id="nuovi-arrivi"></div>
       </div>
       <div id="list-area" style="display:none;padding:12px"></div>
     </div>
@@ -371,7 +375,8 @@ function refilter(){
   var q=(document.getElementById("search-input").value||"").toLowerCase().trim();
   filtered=allEvents.filter(function(ev){
     if(activeCat&&catLabel(ev.category)!==activeCat)return false;
-    if(activeRegion&&(ev.region||"")!==activeRegion)return false;
+    if(activeRegion==="__liked__"){if(!likedEventIds[ev.id])return false;}
+    else if(activeRegion&&(ev.region||"")!==activeRegion)return false;
     if(q&&(ev.event_name||"").toLowerCase().indexOf(q)<0&&(ev.location_name||"").toLowerCase().indexOf(q)<0&&(ev.category||"").toLowerCase().indexOf(q)<0)return false;
     return true;
   });
@@ -402,8 +407,31 @@ function setRegion(r){
   document.querySelectorAll(".region-chip").forEach(function(el){
     el.classList.toggle("active", el.dataset.region===(r||""));
   });
-  if(listViewActive){refilter();renderList();}
-  else{applyFilters();}
+  if(r==="__liked__"){
+    if(!listViewActive){
+      listViewActive=true;
+      document.getElementById("view-toggle-btn").textContent="📅";
+      document.getElementById("cal-area").style.display="none";
+      document.getElementById("list-area").style.display="block";
+      document.getElementById("cal-prev-btn").style.visibility="hidden";
+      document.getElementById("cal-next-btn").style.visibility="hidden";
+      document.getElementById("today-btn").style.visibility="hidden";
+      document.getElementById("cal-label").textContent="My Events";
+    }
+    refilter();renderList();
+  } else {
+    if(listViewActive){
+      listViewActive=false;
+      document.getElementById("view-toggle-btn").textContent="&#9776;";
+      document.getElementById("cal-area").style.display="";
+      document.getElementById("list-area").style.display="none";
+      document.getElementById("cal-prev-btn").style.visibility="";
+      document.getElementById("cal-next-btn").style.visibility="";
+      document.getElementById("today-btn").style.visibility="";
+      renderCal();
+    }
+    applyFilters();
+  }
 }
 
 function showSearchResults(){
@@ -946,26 +974,30 @@ async function loadEvents(){
     var data=await r.json();
     allEvents=data.events||data||[];
   }catch(e){console.error(e);allEvents=[]}
-  filtered=allEvents;renderCal();renderFeaturedHome();
+  filtered=allEvents;renderCal();renderNuoviArrivi();
 }
 
-function renderFeaturedHome(){
-  var el=document.getElementById("featured-home");
+function renderNuoviArrivi(){
+  var el=document.getElementById("nuovi-arrivi");
   if(!el)return;
   var today=new Date().toISOString().slice(0,10);
-  var withFlyer=allEvents.filter(function(e){return (e.flyer_image||e.flyer_thumb)&&(e.date_end||e.date_start||"")>=today});
-  if(!withFlyer.length){el.innerHTML="";return}
-  var ev=withFlyer[Math.floor(Math.random()*withFlyer.length)];
-  var img=ev.flyer_image||ev.flyer_thumb;
-  var cat=catKey(ev.category);
-  var ds=ev.date_start?new Date(ev.date_start).toLocaleDateString("it-IT",{day:"numeric",month:"short"}):"";
-  el.innerHTML="<div class='featured-label'>In evidenza</div>"
-    +"<div class='featured-flyer' onclick='showFeaturedEvent(\""+ev.id+"\")'>"
-    +(img?"<img src='"+esc(img)+"' alt='"+esc(ev.event_name||"")+"' loading='lazy'/>":"<div class='featured-flyer-ph'>&#127807;</div>")
-    +"<div class='featured-info'>"
-    +"<div class='featured-name'>"+esc(ev.event_name||"Evento")+"</div>"
-    +"<div class='featured-meta'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span> "+ds+" &middot; "+esc(ev.location_name||"")+"</div>"
-    +"</div></div>";
+  var recent=allEvents.filter(function(e){return(e.date_end||e.date_start||"")>=today;})
+    .slice().sort(function(a,b){return b.id-a.id;}).slice(0,8);
+  if(!recent.length){el.innerHTML="";return;}
+  var h="<div class='nuovi-arrivi'><div class='na-label'>Nuovi arrivi</div><div class='na-list'>";
+  recent.forEach(function(ev){
+    var img=ev.flyer_thumb||ev.flyer_image||"";
+    var cat=catKey(ev.category);
+    var ds=ev.date_start?new Date(ev.date_start).toLocaleDateString("it-IT",{day:"numeric",month:"short"}):"";
+    h+="<div class='na-card' onclick='showFeaturedEvent("+JSON.stringify(ev.id)+")'>"
+      +"<div class='na-thumb'>"+(img?"<img src='"+esc(img)+"' loading='lazy'/>":"<div class='na-thumb-ph'>&#127807;</div>")+"</div>"
+      +"<div class='na-info'>"
+      +"<div class='na-name'>"+esc(ev.event_name||"Evento")+"</div>"
+      +"<div class='na-meta'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span> "+ds+(ev.location_name?" &middot; "+esc(ev.location_name):"")+"</div>"
+      +"</div></div>";
+  });
+  h+="</div></div>";
+  el.innerHTML=h;
 }
 
 function showFeaturedEvent(id){
