@@ -952,7 +952,8 @@ async function loadEvents(){
 function renderFeaturedHome(){
   var el=document.getElementById("featured-home");
   if(!el)return;
-  var withFlyer=allEvents.filter(function(e){return e.flyer_image||e.flyer_thumb});
+  var today=new Date().toISOString().slice(0,10);
+  var withFlyer=allEvents.filter(function(e){return (e.flyer_image||e.flyer_thumb)&&(e.date_end||e.date_start||"")>=today});
   if(!withFlyer.length){el.innerHTML="";return}
   var ev=withFlyer[Math.floor(Math.random()*withFlyer.length)];
   var img=ev.flyer_image||ev.flyer_thumb;
