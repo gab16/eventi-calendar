@@ -408,29 +408,30 @@ function setRegion(r){
     el.classList.toggle("active", el.dataset.region===(r||""));
   });
   if(r==="__liked__"){
-    if(!listViewActive){
-      listViewActive=true;
-      document.getElementById("view-toggle-btn").textContent="📅";
-      document.getElementById("cal-area").style.display="none";
-      document.getElementById("list-area").style.display="block";
-      document.getElementById("cal-prev-btn").style.visibility="hidden";
-      document.getElementById("cal-next-btn").style.visibility="hidden";
-      document.getElementById("today-btn").style.visibility="hidden";
-      document.getElementById("cal-label").textContent="My Events";
-    }
+    // Switch to list view for My Events
+    listViewActive=true;
+    document.getElementById("view-toggle-btn").textContent="📅";
+    document.getElementById("cal-area").style.display="none";
+    document.getElementById("list-area").style.display="block";
+    document.getElementById("cal-prev-btn").style.visibility="hidden";
+    document.getElementById("cal-next-btn").style.visibility="hidden";
+    document.getElementById("today-btn").style.visibility="hidden";
+    document.getElementById("cal-label").textContent="My Events";
     refilter();renderList();
   } else {
-    if(listViewActive){
-      listViewActive=false;
-      document.getElementById("view-toggle-btn").textContent="&#9776;";
-      document.getElementById("cal-area").style.display="";
-      document.getElementById("list-area").style.display="none";
-      document.getElementById("cal-prev-btn").style.visibility="";
-      document.getElementById("cal-next-btn").style.visibility="";
-      document.getElementById("today-btn").style.visibility="";
-      renderCal();
-    }
-    applyFilters();
+    // Always switch back to calendar view
+    listViewActive=false;
+    document.getElementById("view-toggle-btn").textContent="&#9776;";
+    document.getElementById("cal-area").style.display="";
+    document.getElementById("list-area").style.display="none";
+    document.getElementById("cal-prev-btn").style.visibility="";
+    document.getElementById("cal-next-btn").style.visibility="";
+    document.getElementById("today-btn").style.visibility="";
+    document.getElementById("nuovi-arrivi").style.display=r?"none":"";
+    refilter();
+    renderCal();
+    if(!r) renderNuoviArrivi();
+    showScreen("cal");
   }
 }
 
