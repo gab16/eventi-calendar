@@ -189,6 +189,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
   <div class="pin-err" id="pin-err"></div>
   <button class="pin-btn" id="login-btn" onclick="doLogin()">Entra</button>
 </div>
+
+<div class="pin-overlay" id="region-overlay" style="display:none">
+  <img class="pin-logo" src="/assets/logo.png" alt="Kalendarr"/>
+  <div class="pin-title">Dove sei?</div>
+  <div class="pin-sub">Scegli la tua area per vedere gli eventi vicino a te</div>
+  <div style="width:100%;margin:24px 0 8px">
+    <select id="region-select" style="width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid #d0d7c8;font-size:16px;font-family:'DM Sans',sans-serif;background:#fff;color:#1a2e1a;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 12px center">
+      <option value="">— Seleziona area —</option>
+      <option value="Maremma">🌿 Maremma</option>
+      <option value="Zurich">🏙️ Zurich</option>
+      <option value="New York">🗽 New York</option>
+      <option value="">🌍 Tutti gli eventi</option>
+    </select>
+  </div>
+  <div class="pin-err" id="region-err"></div>
+  <button class="pin-btn" onclick="confirmRegion()">Continua</button>
+</div>
+
 <div id="app" style="display:none">
 
   <!-- TOP BAR -->
@@ -793,6 +811,28 @@ async function doLogin(){
   }
 }
 
+function confirmRegion(){
+  var sel=document.getElementById("region-select");
+  var region=sel.value;
+  // Save to user profile
+  currentUser.default_region=region;
+  sessionStorage.setItem("kl_user",JSON.stringify(currentUser));
+  // Save to NocoDB
+  fetch("/api/auth",{
+    method:"PATCH",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({userId:currentUser.userId,default_region:region})
+  }).catch(function(){});
+  // Hide overlay and launch app
+  document.getElementById("region-overlay").style.display="none";
+  activeRegion=region;
+  document.querySelectorAll(".region-chip").forEach(function(el){
+    el.classList.toggle("active",el.dataset.region===(region||""));
+  });
+  loadUserLikes();
+  loadEvents();
+}
+
 function doLogout(){
   currentUser=null;
   likedEventIds={};
@@ -809,12 +849,22 @@ function doLogout(){
 
 function onLoginSuccess(){
   document.getElementById("pin-overlay").classList.add("hidden");
-  document.getElementById("app").style.display="flex";
   var tu=document.getElementById("topbar-user");
   if(tu){tu.textContent="Logout";tu.title=currentUser.display_name||currentUser.username;}
   selDay=null;selDayStr="";curDate=new Date();
-  loadUserLikes();
-  loadEvents();
+  if(currentUser.default_region===undefined||currentUser.default_region===null){
+    // First login — show region picker
+    document.getElementById("region-overlay").style.display="flex";
+  } else {
+    // Returning user — go straight to their region
+    document.getElementById("app").style.display="flex";
+    activeRegion=currentUser.default_region||"";
+    document.querySelectorAll(".region-chip").forEach(function(el){
+      el.classList.toggle("active",el.dataset.region===(activeRegion||""));
+    });
+    loadUserLikes();
+    loadEvents();
+  }
 }
 
 async function loadUserLikes(){
@@ -867,6 +917,15 @@ if(_saved){
     document.getElementById("app").style.display="flex";
     var tu=document.getElementById("topbar-user");
     if(tu){tu.textContent="Logout";tu.title=currentUser.display_name||currentUser.username;}
+    if(currentUser.default_region!==undefined&&currentUser.default_region!==null){
+      activeRegion=currentUser.default_region||"";
+      document.querySelectorAll(".region-chip").forEach(function(el){
+        el.classList.toggle("active",el.dataset.region===(activeRegion||""));
+      });
+      document.getElementById("app").style.display="flex";
+    } else {
+      document.getElementById("region-overlay").style.display="flex";
+    }
     loadUserLikes();
   }catch(e){sessionStorage.removeItem("kl_user");}
 }
