@@ -825,6 +825,7 @@ function confirmRegion(){
   }).catch(function(){});
   // Hide overlay and launch app
   document.getElementById("region-overlay").style.display="none";
+  document.getElementById("app").style.display="flex";
   activeRegion=region;
   document.querySelectorAll(".region-chip").forEach(function(el){
     el.classList.toggle("active",el.dataset.region===(region||""));
