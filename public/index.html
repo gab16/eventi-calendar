@@ -417,7 +417,7 @@ function setRegion(r){
     document.getElementById("cal-next-btn").style.visibility="hidden";
     document.getElementById("today-btn").style.visibility="hidden";
     document.getElementById("cal-label").textContent="My Events";
-    refilter();renderList();showScreen("cal");
+    refilter();showScreen("cal");renderList();
   } else {
     // Always switch back to calendar view
     listViewActive=false;
