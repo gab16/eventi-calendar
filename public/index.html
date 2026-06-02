@@ -417,7 +417,7 @@ function setRegion(r){
     document.getElementById("cal-next-btn").style.visibility="hidden";
     document.getElementById("today-btn").style.visibility="hidden";
     document.getElementById("cal-label").textContent="My Events";
-    refilter();showScreen("cal");renderList();
+    showScreen("cal");loadUserLikes().then(function(){refilter();renderList();});
   } else {
     // Always switch back to calendar view
     listViewActive=false;
@@ -912,7 +912,10 @@ function renderList(){
     return (a.ev.time_start||"")>(b.ev.time_start||"")?1:-1;
   });
   if(!pairs.length){
-    el.innerHTML="<div class='empty-day'><div class='empty-day-icon'>&#128197;</div><div class='empty-day-text'>Nessun evento in programma</div></div>";
+    var emptyMsg=activeRegion==="__liked__"
+      ? "<div class='empty-day'><div class='empty-day-icon'>&#10084;&#65039;</div><div class='empty-day-text'>Nessun evento salvato</div></div>"
+      : "<div class='empty-day'><div class='empty-day-icon'>&#128197;</div><div class='empty-day-text'>Nessun evento in programma</div></div>";
+    el.innerHTML=emptyMsg;
     return;
   }
   var lastDate="";
