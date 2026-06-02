@@ -434,7 +434,6 @@ function setRegion(r){
     document.getElementById("cal-next-btn").style.visibility="hidden";
     document.getElementById("today-btn").style.visibility="hidden";
     document.getElementById("cal-label").textContent="My Events";
-    document.getElementById("nuovi-arrivi").style.display="none";
     showScreen("cal");
     loadUserLikes().then(function(){refilter();renderList();});
   } else {
@@ -448,10 +447,9 @@ function setRegion(r){
       document.getElementById("today-btn").style.visibility="";
       document.getElementById("cal-label").textContent="";
     }
-    document.getElementById("nuovi-arrivi").style.display=r?"none":"";
     refilter();
     renderCal();
-    if(!r) renderNuoviArrivi();
+    renderNuoviArrivi();
   }
 }
 
@@ -1061,8 +1059,11 @@ function renderNuoviArrivi(){
   var el=document.getElementById("nuovi-arrivi");
   if(!el)return;
   var today=new Date().toISOString().slice(0,10);
-  var recent=allEvents.filter(function(e){return(e.date_end||e.date_start||"")>=today;})
-    .slice().sort(function(a,b){return b.id-a.id;}).slice(0,8);
+  var recent=allEvents.filter(function(e){
+    if((e.date_end||e.date_start||"")<today)return false;
+    if(activeRegion&&activeRegion!=="__liked__"&&(e.region||"")!==activeRegion)return false;
+    return true;
+  }).slice().sort(function(a,b){return b.id-a.id;}).slice(0,8);
   if(!recent.length){el.innerHTML="";return;}
   var h="<div class='nuovi-arrivi'><div class='na-label'>Nuovi arrivi</div><div class='na-list'>";
   recent.forEach(function(ev){
