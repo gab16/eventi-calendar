@@ -168,16 +168,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 
 /* APP SHELL */
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* LIKE BUTTON */
+.like-btn{display:flex;align-items:center;gap:6px;margin:16px 16px 0;padding:10px 16px;border-radius:var(--r);border:1.5px solid var(--cd);background:var(--w);font-size:14px;font-weight:600;color:var(--tm);cursor:pointer;width:calc(100% - 32px);justify-content:center;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.like-btn.liked{background:#fff0f3;border-color:#f87171;color:#e11d48}
+.like-btn:active{transform:scale(0.97)}
+.topbar-user{font-size:11px;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px}
 </style>
 </head>
 <body>
 <div class="pin-overlay" id="pin-overlay">
   <img class="pin-logo" src="/assets/logo.png" alt="Kalendarr"/>
   <div class="pin-title">Kalendarr</div>
-  <div class="pin-sub">Demo access</div>
-  <input class="pin-input" id="pin-input" type="password" placeholder="PIN" maxlength="20" onkeydown="if(event.key==='Enter')checkPin()"/>
+  <div class="pin-sub">Accedi per continuare</div>
+  <input class="pin-input" id="login-user" type="text" placeholder="Username" maxlength="40" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
+  <input class="pin-input" id="login-pass" type="password" placeholder="Password" maxlength="40" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
   <div class="pin-err" id="pin-err"></div>
-  <button class="pin-btn" onclick="checkPin()">Entra</button>
+  <button class="pin-btn" id="login-btn" onclick="doLogin()">Entra</button>
 </div>
 <div id="app" style="display:none">
 
@@ -189,6 +196,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
     </div>
     <button class="btn-add" onclick="goAdd()" title="Aggiungi evento">+</button>
     <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()">IT</button>
+    <span class="topbar-user" id="topbar-user"></span>
     <button class="btn-hamburger" onclick="toggleFilter()" id="hamburger-btn">&#9776;</button>
   </div>
 
@@ -281,7 +289,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
 var API="/api/events";
 var FLOWISE="https://flowise.tattionline.com/api/v1/prediction/f3d22287-f6bf-47df-8403-7c7098b8e067";
 var UPLOAD_API="/api/upload";
-var ADMIN_PW="Tatti1234!";
 var MONTHS=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 var DAYS=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 var allEvents=[],filtered=[],curDate=new Date(),selDay=null,selDayStr="",curScreen="cal";
@@ -456,6 +463,7 @@ function tapSearchResult(idx){
     if(ev2.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev2.time_start)+"</span></div>";
     h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price2)+"</span></div>";
     if(ev2.description)h+="<div class='ev-desc'>"+esc(ev2.description)+"</div>";
+    h+=makeLikeBtn(ev2.id);
     h+="</div>";
   });
   document.getElementById("event-content").innerHTML=h;
@@ -556,6 +564,7 @@ function tapEvent(idx){
     if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
     h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
     if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
+    h+=makeLikeBtn(ev.id);
     h+="</div>";
   });
   document.getElementById("event-content").innerHTML=h;
@@ -731,23 +740,91 @@ async function handleFile(input){
   }
 }
 
-// INIT
-var APP_PIN="Poggio5!";
-function checkPin(){
-  var v=document.getElementById("pin-input").value;
-  if(v===APP_PIN){
-    document.getElementById("pin-overlay").classList.add("hidden");
-    document.getElementById("app").style.display="flex";
-    sessionStorage.setItem("ml_auth","1");
-  }else{
-    document.getElementById("pin-err").textContent="PIN non valido";
-    document.getElementById("pin-input").value="";
-    document.getElementById("pin-input").focus();
+// AUTH + LIKES
+var currentUser=null;
+var likedEventIds={};
+
+async function doLogin(){
+  var u=document.getElementById("login-user").value.trim();
+  var p=document.getElementById("login-pass").value;
+  if(!u||!p){document.getElementById("pin-err").textContent="Inserisci username e password";return;}
+  var btn=document.getElementById("login-btn");
+  btn.textContent="...";btn.disabled=true;
+  document.getElementById("pin-err").textContent="";
+  try{
+    var r=await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:u,password:p})});
+    var data=await r.json();
+    if(!r.ok){document.getElementById("pin-err").textContent=data.error||"Credenziali non valide";btn.textContent="Entra";btn.disabled=false;return;}
+    currentUser=data;
+    sessionStorage.setItem("kl_user",JSON.stringify(data));
+    onLoginSuccess();
+  }catch(e){
+    document.getElementById("pin-err").textContent="Errore di rete";
+    btn.textContent="Entra";btn.disabled=false;
   }
 }
-if(sessionStorage.getItem("ml_auth")==="1"){
+
+function onLoginSuccess(){
   document.getElementById("pin-overlay").classList.add("hidden");
   document.getElementById("app").style.display="flex";
+  var tu=document.getElementById("topbar-user");
+  if(tu)tu.textContent=currentUser.display_name||currentUser.username;
+  loadUserLikes();
+  loadEvents();
+}
+
+async function loadUserLikes(){
+  if(!currentUser)return;
+  try{
+    var r=await fetch("/api/likes?userId="+currentUser.userId);
+    if(!r.ok)return;
+    var data=await r.json();
+    likedEventIds={};
+    (data.eventIds||[]).forEach(function(id){likedEventIds[id]=true;});
+  }catch(e){}
+}
+
+async function toggleLike(eventId){
+  if(!currentUser)return;
+  var isLiked=!!likedEventIds[eventId];
+  if(isLiked){delete likedEventIds[eventId];}else{likedEventIds[eventId]=true;}
+  renderLikeBtn(eventId);
+  try{
+    await fetch("/api/likes",{
+      method:isLiked?"DELETE":"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({userId:currentUser.userId,eventId:eventId})
+    });
+  }catch(e){
+    if(isLiked){likedEventIds[eventId]=true;}else{delete likedEventIds[eventId];}
+    renderLikeBtn(eventId);
+  }
+}
+
+function renderLikeBtn(eventId){
+  var btn=document.getElementById("like-btn-"+eventId);
+  if(!btn)return;
+  var liked=!!likedEventIds[eventId];
+  btn.className="like-btn"+(liked?" liked":"");
+  btn.innerHTML=liked?"&#10084;&#65039; Salvato":"&#129293; Salva evento";
+}
+
+function makeLikeBtn(eventId){
+  if(!currentUser)return"";
+  var liked=!!likedEventIds[eventId];
+  return"<button id=\"like-btn-"+eventId+"\" class=\"like-btn"+(liked?" liked":"")+"\" onclick=\"toggleLike("+JSON.stringify(eventId)+")\">"+(liked?"&#10084;&#65039; Salvato":"&#129293; Salva evento")+"</button>";
+}
+
+var _saved=sessionStorage.getItem("kl_user");
+if(_saved){
+  try{
+    currentUser=JSON.parse(_saved);
+    document.getElementById("pin-overlay").classList.add("hidden");
+    document.getElementById("app").style.display="flex";
+    var tu=document.getElementById("topbar-user");
+    if(tu)tu.textContent=currentUser.display_name||currentUser.username;
+    loadUserLikes();
+  }catch(e){sessionStorage.removeItem("kl_user");}
 }
 
 var listViewActive=false;
@@ -850,6 +927,7 @@ function tapEventFromList(id){
   if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
   h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
   if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
+  h+=makeLikeBtn(ev.id);
   h+="</div>";
   document.getElementById("event-content").innerHTML=h;
   showScreen("event");
@@ -905,12 +983,11 @@ function showFeaturedEvent(id){
   if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
   h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
   if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
+  h+=makeLikeBtn(ev.id);
   h+="</div>";
   document.getElementById("event-content").innerHTML=h;
   showScreen("event");
 }
-
-loadEvents();
 </script>
 </body>
 </html>
