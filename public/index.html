@@ -199,7 +199,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--td);fo
     </div>
     <button class="btn-add" onclick="goAdd()" title="Aggiungi evento">+</button>
     <button class="lang-toggle" id="lang-toggle" onclick="toggleLang()">IT</button>
-    <span class="topbar-user" id="topbar-user" onclick="doLogout()" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" title="Logout"></span>
+    <span class="topbar-user" id="topbar-user" onclick="doLogout()" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px"></span>
     <button class="btn-hamburger" onclick="toggleFilter()" id="hamburger-btn">&#9776;</button>
   </div>
 
@@ -811,7 +811,7 @@ function onLoginSuccess(){
   document.getElementById("pin-overlay").classList.add("hidden");
   document.getElementById("app").style.display="flex";
   var tu=document.getElementById("topbar-user");
-  if(tu)tu.textContent=currentUser.display_name||currentUser.username;
+  if(tu){tu.textContent="Logout";tu.title=currentUser.display_name||currentUser.username;}
   selDay=null;selDayStr="";curDate=new Date();
   loadUserLikes();
   loadEvents();
@@ -866,7 +866,7 @@ if(_saved){
     document.getElementById("pin-overlay").classList.add("hidden");
     document.getElementById("app").style.display="flex";
     var tu=document.getElementById("topbar-user");
-    if(tu)tu.textContent=currentUser.display_name||currentUser.username;
+    if(tu){tu.textContent="Logout";tu.title=currentUser.display_name||currentUser.username;}
     loadUserLikes();
   }catch(e){sessionStorage.removeItem("kl_user");}
 }
