@@ -506,7 +506,7 @@ function tapSearchResult(idx){
     h+="<div class='ev-body'><div class='ev-pill-row'><span class='pill-sm ps-"+cat2+"'>"+catLabel(ev2.category)+"</span></div>";
     h+="<div class='ev-name'>"+esc(ev2.event_name||"Evento")+"</div>";
     h+="<div class='ev-row'>"+SVG_CAL+"<span>"+fmtDate(ev2.date_start,ev2.date_end)+"</span></div>";
-    h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev2.location_name||ev2.address||"\u2014")+"</span></div>";
+    h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev2.location_name||"\u2014")+(ev2.address?"<br><small style='color:var(--ts)'>"+esc(ev2.address)+"</small>":"")+"</span></div>";
     if(ev2.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev2.time_start)+"</span></div>";
     h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price2)+"</span></div>";
     if(ev2.description)h+="<div class='ev-desc'>"+esc(ev2.description)+"</div>";
@@ -607,7 +607,7 @@ function tapEvent(idx){
     h+="<div class='ev-pill-row'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span></div>";
     h+="<div class='ev-name'>"+esc(ev.event_name||"Evento")+"</div>";
     h+="<div class='ev-row'>"+SVG_CAL+"<span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
-    h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||ev.address||"\u2014")+"</span></div>";
+    h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||"\u2014")+(ev.address?"<br><small style='color:var(--ts)'>"+esc(ev.address)+"</small>":"")+"</span></div>";
     if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
     h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
     if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
@@ -1030,7 +1030,7 @@ function tapEventFromList(id){
   h+="<div class='ev-pill-row'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span></div>";
   h+="<div class='ev-name'>"+esc(ev.event_name||"Evento")+"</div>";
   h+="<div class='ev-row'>"+SVG_CAL+"<span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
-  h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||ev.address||"—")+"</span></div>";
+  h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||"—")+(ev.address?"<br><small style='color:var(--ts)'>"+esc(ev.address)+"</small>":"")+"</span></div>";
   if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
   h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
   if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
@@ -1094,7 +1094,7 @@ function showFeaturedEvent(id){
   h+="<div class='ev-body'><div class='ev-pill-row'><span class='pill-sm ps-"+cat+"'>"+catLabel(ev.category)+"</span></div>";
   h+="<div class='ev-name'>"+esc(ev.event_name||"Evento")+"</div>";
   h+="<div class='ev-row'>"+SVG_CAL+"<span>"+fmtDate(ev.date_start,ev.date_end)+"</span></div>";
-  h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||ev.address||"\u2014")+"</span></div>";
+  h+="<div class='ev-row'>"+SVG_PIN+"<span>"+esc(ev.location_name||"\u2014")+(ev.address?"<br><small style='color:var(--ts)'>"+esc(ev.address)+"</small>":"")+"</span></div>";
   if(ev.time_start)h+="<div class='ev-row'>"+SVG_CLK+"<span>"+esc(ev.time_start)+"</span></div>";
   h+="<div class='ev-row'>"+SVG_TKT+"<span>"+esc(price)+"</span></div>";
   if(ev.description)h+="<div class='ev-desc'>"+esc(ev.description)+"</div>";
