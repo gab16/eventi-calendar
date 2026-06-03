@@ -1017,7 +1017,7 @@ function renderList(){
   el.innerHTML=h;
 }
 function tapEventFromList(id){
-  var ev=filtered.find(function(e){return e.id===id});
+  var ev=filtered.find(function(e){return String(e.id)===String(id)});
   if(!ev)return;
   selDay=new Date(ev.date_start);
   selDayStr=ev.date_start;
