@@ -150,9 +150,11 @@ function App(){
 
  function extractRecordId(flowiseJson){
   try{
-    // New structure: single object with tool/toolInput/toolOutput
-    const sources = Array.isArray(flowiseJson) ? flowiseJson : [flowiseJson];
-    for(const t of sources){
+    // Handle both structures:
+    // New: { text, usedTools: [{tool, toolInput, toolOutput}] }
+    // Alt: single object or array with tool/toolOutput directly
+    const tools = flowiseJson?.usedTools || (Array.isArray(flowiseJson) ? flowiseJson : [flowiseJson]);
+    for(const t of tools){
       if(!t.toolOutput) continue;
       let out = t.toolOutput;
       if(typeof out==='string'){
