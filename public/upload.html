@@ -241,18 +241,12 @@ function App(){
       }
     }catch(e){imgErr=e.message}
 
-    // Auto-approve and tag region
-    let patchErr=null;
-    try{
-      const patchFields={status:'approved'};
-      if(REGION)patchFields.region=REGION;
-      const pr=await fetch(ADMIN_API,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json','X-Admin-Password':pw},
-        body:JSON.stringify({id: info.id, fields:patchFields}),
-      });
-      if(!pr.ok){const t=await pr.text();patchErr='PATCH '+pr.status+': '+t;console.error('PATCH failed:',patchErr);}
-    }catch(e){patchErr=e.message;console.error('PATCH error:',e);}
+    // Region tag via PATCH
+    if(REGION && info.id){
+      try{
+        await fetch(ADMIN_API,{method:'PATCH',headers:{'Content-Type':'application/json','X-Admin-Password':pw},body:JSON.stringify({id:info.id,fields:{region:REGION}})});
+      }catch(e){console.warn('Region PATCH failed:',e);}
+    }
 
     setResult({
       ok:true,

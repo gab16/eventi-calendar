@@ -11,12 +11,11 @@ export default async function handler(req, res) {
 
   try {
     const region = req.query.region || '';
-    let where = `(status,eq,approved)`;
-    if (region) where += `~and(region,eq,${region})`;
+    const where = region ? `(region,eq,${region})` : '';
 
     const url = `${NOCODB_URL}/api/v1/db/data/noco/${BASE_ID}/${EVENTS_TABLE}`
-      + `?where=${encodeURIComponent(where)}`
-      + `&limit=200`
+      + (where ? `?where=${encodeURIComponent(where)}&` : '?')
+      + `limit=200`
       + `&sort=date_start`;
 
     const resp = await fetch(url, {
