@@ -150,8 +150,9 @@ function App(){
 
  function extractRecordId(flowiseJson){
   try{
-    const tools = flowiseJson?.usedTools || [];
-    for(const t of tools){
+    // New structure: single object with tool/toolInput/toolOutput
+    const sources = Array.isArray(flowiseJson) ? flowiseJson : [flowiseJson];
+    for(const t of sources){
       if(!t.toolOutput) continue;
       let out = t.toolOutput;
       if(typeof out==='string'){
@@ -159,7 +160,7 @@ function App(){
       }
       if(Array.isArray(out)){
         for(const row of out){
-          if(row.created === true && row.id)   // ← must be explicitly created
+          if(row.created === true && row.id)
             return {id: row.id, created: true, name: row.event_name};
           if(row.skipped)
             return {id:null, created:false, name:row.event_name, reason:'duplicate'};
