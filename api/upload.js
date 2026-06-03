@@ -34,11 +34,21 @@ export default async function handler(req, res) {
     const blob = new Blob([binaryData], { type: mime });
     formData.append('file', blob, fname);
 
-    const uploadResp = await fetch(`${NOCODB_URL}/api/v1/db/storage/upload`, {
+    // Try new API path first, fall back to legacy
+    let uploadResp = await fetch(`${NOCODB_URL}/api/v1/storage/upload?path=flyer_images`, {
       method: 'POST',
       headers: { 'xc-token': NOCODB_TOKEN },
       body: formData,
     });
+
+    // Fallback to legacy path
+    if (!uploadResp.ok && uploadResp.status === 404) {
+      uploadResp = await fetch(`${NOCODB_URL}/api/v1/db/storage/upload`, {
+        method: 'POST',
+        headers: { 'xc-token': NOCODB_TOKEN },
+        body: formData,
+      });
+    }
 
     if (!uploadResp.ok) {
       const detail = await uploadResp.text();
