@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       const url = `${baseUrl}?where=${where}&limit=1`;
 
       const resp = await fetch(url, { headers });
-      if (!resp.ok) return res.status(500).json({ error: 'Auth service error' });
+      if (!resp.ok) { const t = await resp.text(); return res.status(500).json({ error: 'Auth service error', status: resp.status, detail: t, url }); }
 
       const data = await resp.json();
       if (!data.list || data.list.length === 0) {
