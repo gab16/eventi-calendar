@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
     if (!resp.ok) {
       const body = await resp.text();
-      return res.status(resp.status).json({ error: 'NocoDB error', detail: body });
+      return res.status(resp.status).json({ error: 'NocoDB error', detail: body, status: resp.status, url });
     }
 
     const data = await resp.json();
