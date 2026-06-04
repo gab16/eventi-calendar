@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   const NOCODB_TOKEN = process.env.NOCODB_TOKEN;
-  const NOCODB_URL = process.env.NOCODB_URL || 'https://nocodb.kalendarr.com';
+  const NOCODB_URL = process.env.NOCODB_URL || 'https://nocodb.tattionline.com';
   const BASE_ID = process.env.NOCODB_BASE_ID;
   const LIKES_TABLE = process.env.NOCODB_LIKES_TABLE;
 

@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   const NOCODB_TOKEN = process.env.NOCODB_TOKEN;
-  const NOCODB_URL = process.env.NOCODB_URL || 'https://nocodb.kalendarr.com';
+  const NOCODB_URL = process.env.NOCODB_URL || 'https://nocodb.tattionline.com';
   const BASE_ID = process.env.NOCODB_BASE_ID;
   const USERS_TABLE = process.env.NOCODB_USERS_TABLE;
   const baseUrl = `${NOCODB_URL}/api/v1/db/data/noco/${BASE_ID}/${USERS_TABLE}`;
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       const url = `${baseUrl}?where=${encodeURIComponent(where)}&limit=1`;
 
       const resp = await fetch(url, { headers });
-      if (!resp.ok) { const t = await resp.text(); return res.status(500).json({ error: 'Auth service error', status: resp.status, detail: t, url }); }
+      if (!resp.ok) return res.status(500).json({ error: 'Auth service error' });
 
       const data = await resp.json();
       if (!data.list || data.list.length === 0) {
