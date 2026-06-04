@@ -5,7 +5,7 @@ export const config = {
 export default async function handler(req, res) {
   const NOCODB_TOKEN = process.env.NOCODB_TOKEN;
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-  const NOCODB_URL = 'https://nocodb.tattionline.com';
+  const NOCODB_URL = 'https://nocodb.kalendarr.com';
   const BASE_ID = 'p8agcx6gvem4u30';
   const TABLE_ID = 'mrpiz5gilnibj2j';
 
