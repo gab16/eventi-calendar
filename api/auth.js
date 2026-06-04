@@ -17,9 +17,9 @@ export default async function handler(req, res) {
       const { username, password } = req.body;
       if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
 
-      // encode values to handle special chars like !
-      const where = `(username,eq,${encodeURIComponent(username)})~and(password,eq,${encodeURIComponent(password)})`;
-      const url = `${baseUrl}?where=${where}&limit=1`;
+      // encode only the whole where string, not individual values
+      const where = `(username,eq,${username})~and(password,eq,${password})`;
+      const url = `${baseUrl}?where=${encodeURIComponent(where)}&limit=1`;
 
       const resp = await fetch(url, { headers });
       if (!resp.ok) { const t = await resp.text(); return res.status(500).json({ error: 'Auth service error', status: resp.status, detail: t, url }); }
