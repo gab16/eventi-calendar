@@ -39,7 +39,7 @@ const{useState,useRef,useEffect}=React;
 const FLOWISE_URL='https://flowise.tattionline.com/api/v1/prediction/f3d22287-f6bf-47df-8403-7c7098b8e067';
 const ADMIN_API='/api/admin';
 const UPLOAD_API='/api/upload';
-const _klUser=JSON.parse(sessionStorage.getItem('kl_user')||'{}');
+const _klUser=JSON.parse(localStorage.getItem('kl_user')||'{}');
 const REGION=new URLSearchParams(window.location.search).get('region')||_klUser.default_region||'';
 
 function imgToJpeg(img, MAX=1600, Q=0.82){
