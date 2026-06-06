@@ -51,12 +51,7 @@ export default async function handler(req, res) {
     const R2_BASE = 'https://images.tattionline.com/flyers';
 
     const events = (data.list || []).map(f => {
-      const attachment = parseAttachment(f.flyer_image);
-      const nocoUrl = imgUrl(attachment, null);
-      const nocoThumb = imgUrl(attachment, 'card_cover');
-      // R2 URL by convention; use NocoDB URL only for old records that have attachments
       const r2Url = `${R2_BASE}/${f.Id}.jpg`;
-      const useR2 = !attachment; // no NocoDB attachment = new record, use R2
       return {
         id: f.Id,
         event_name: f.event_name || '',
@@ -73,8 +68,8 @@ export default async function handler(req, res) {
         phone: f.phone || '',
         is_sponsored: !!f.is_sponsored,
         region: f.region || '',
-        flyer_image: useR2 ? r2Url : nocoUrl,
-        flyer_thumb: useR2 ? r2Url : (nocoThumb || nocoUrl),
+        flyer_image: r2Url,
+        flyer_thumb: r2Url,
       };
     });
 
