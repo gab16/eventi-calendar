@@ -67,7 +67,6 @@ export default async function handler(req, res) {
           language: f.language || '',
           phone: f.phone || '',
           confidence: f.confidence || '',
-          status: f.status || 'pending',
           is_sponsored: !!f.is_sponsored,
           region: f.region || '',
           flyer_image: url,
@@ -85,7 +84,7 @@ export default async function handler(req, res) {
       const { id, fields } = req.body;
       if (!id || !fields) return res.status(400).json({ error: 'Missing id or fields' });
       const allowed = ['event_name','date_start','date_end','time_start','location_name','address',
-        'category','organizer','price','description','language','phone','status','is_sponsored','region'];
+        'category','organizer','price','description','language','phone','is_sponsored','region'];
       const safeFields = {};
       for (const key of allowed) {
         if (key in fields) safeFields[key] = fields[key];
@@ -107,8 +106,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
       const allowed = ['event_name','date_start','date_end','time_start','location_name','address',
-        'category','organizer','price','description','language','phone','status','is_sponsored','region'];
-      const safeFields = { status: 'pending' };
+        'category','organizer','price','description','language','phone','is_sponsored','region'];
+      const safeFields = {};
       for (const key of allowed) {
         if (key in fields && fields[key] !== '' && fields[key] != null) safeFields[key] = fields[key];
       }

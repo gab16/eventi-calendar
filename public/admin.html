@@ -42,12 +42,6 @@ const CAT_STYLE={
 const DEF={bg:"#F5F5F5",fg:"#616161",icon:"📌"};
 function gc(c){return CAT_STYLE[c]||DEF}
 
-const STATUS_STYLE={
-  pending:{bg:"#FFF8E1",fg:"#F57F17",label:"⏳ Pending"},
-  approved:{bg:"#E8F5E9",fg:"#2E7D32",label:"✅ Approved"},
-  rejected:{bg:"#FFEBEE",fg:"#C62828",label:"❌ Rejected"},
-};
-
 function App(){
   const[pw,setPw]=useState('');
   const[authed,setAuthed]=useState(false);
@@ -100,14 +94,7 @@ function App(){
     setSaving(null);
   }
 
-  async function setStatus(id,status){
-    await updateEvent(id,{status});
-    setEditing(null);
-  }
-
-  const pending=events.filter(e=>e.status==='pending');
-  const all=events;
-  const shown=tab==='pending'?pending:all;
+  const shown=events;
 
   // ─── LOGIN SCREEN ───
   if(!authed){
@@ -140,11 +127,8 @@ function App(){
         <h1 style={S.navLogo}>🔒 <span style={S.navLogoTxt}>Eventi Admin</span></h1>
       </div>
       <div style={S.navCenter}>
-        <button style={{...S.tabBtn,...(tab==='pending'?S.tabActive:{})}} onClick={()=>{setTab('pending');setEditing(null)}}>
-          ⏳ Pending <span style={S.badge}>{pending.length}</span>
-        </button>
         <button style={{...S.tabBtn,...(tab==='all'?S.tabActive:{})}} onClick={()=>{setTab('all');setEditing(null)}}>
-          📋 All Events <span style={S.badge}>{all.length}</span>
+          📋 All Events <span style={S.badge}>{events.length}</span>
         </button>
         <button style={{...S.tabBtn,...(tab==='add'?S.tabActive:{})}} onClick={()=>{setTab('add');setEditing(null)}}>
           ➕ Add Event
@@ -166,22 +150,20 @@ function App(){
         <div className="fi">
           {shown.length===0?(
             <div style={S.empty}>
-              <span style={{fontSize:48}}>{tab==='pending'?'🎉':'📭'}</span>
-              <p style={{fontSize:16,marginTop:12}}>{tab==='pending'?'No events awaiting review!':'No events found'}</p>
+              <span style={{fontSize:48}}>'📭'</span>
+              <p style={{fontSize:16,marginTop:12}}>'No events found'</p>
             </div>
           ):editing?(
             <EditForm event={editing} pw={pw} onSave={async(fields)=>{await updateEvent(editing.id,fields);setEditing(null)}} onCancel={()=>setEditing(null)} saving={saving===editing.id}/>
           ):(
             shown.map(ev=>{
               const cs=gc(ev.category);
-              const ss=STATUS_STYLE[ev.status]||STATUS_STYLE.pending;
               return(
                 <div key={ev.id} style={S.evCard} className="fi">
                   <div style={{...S.evAccent,background:cs.fg}}/>
                   <div style={S.evBody}>
                     <div style={S.evTop}>
                       <div style={{...S.evCat,background:cs.bg,color:cs.fg}}>{cs.icon} {ev.category}</div>
-                      <div style={{...S.evStatus,background:ss.bg,color:ss.fg}}>{ss.label}</div>
                       {ev.confidence&&<span style={S.evConf}>AI: {ev.confidence}</span>}
                     </div>
                     <h3 style={S.evName}>{ev.event_name}</h3>
@@ -194,12 +176,7 @@ function App(){
                     {ev.description&&<p style={S.evDesc}>{ev.description}</p>}
                     <div style={S.evActions}>
                       <button style={S.editBtn} onClick={()=>setEditing(ev)}>✏️ Edit</button>
-                      {ev.status==='pending'&&<>
-                        <button style={S.approveBtn} onClick={()=>setStatus(ev.id,'approved')} disabled={saving===ev.id}>✅ Approve</button>
-                        <button style={S.rejectBtn} onClick={()=>setStatus(ev.id,'rejected')} disabled={saving===ev.id}>❌ Reject</button>
-                      </>}
-                      {ev.status==='approved'&&<button style={S.rejectBtn} onClick={()=>setStatus(ev.id,'rejected')} disabled={saving===ev.id}>Unpublish</button>}
-                      {ev.status==='rejected'&&<button style={S.approveBtn} onClick={()=>setStatus(ev.id,'approved')} disabled={saving===ev.id}>✅ Approve</button>}
+
                     </div>
                   </div>
                 </div>
@@ -217,7 +194,7 @@ function App(){
             const r=await fetch(API,{
               method:'POST',
               headers,
-              body:JSON.stringify({fields:{...fields,status:'pending'}}),
+              body:JSON.stringify({fields}),
             });
             if(!r.ok){const d=await r.json();throw new Error(d.detail||d.error||'Failed');}
             const result=await r.json();
