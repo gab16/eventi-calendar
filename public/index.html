@@ -1035,11 +1035,24 @@ function toggleLang(){
 }
 
 async function loadEvents(){
+  // Show cached events immediately
   try{
-    var r=await fetch(API);if(!r.ok)throw new Error("HTTP "+r.status);
-    var data=await r.json();
-    allEvents=data.events||data||[];
-  }catch(e){console.error(e);}
+    var cached=localStorage.getItem("kl_events");
+    if(cached){allEvents=JSON.parse(cached);filtered=allEvents;renderCal();renderNuoviArrivi();}
+  }catch(e){}
+  // Fetch fresh data with retry
+  for(var attempt=0;attempt<3;attempt++){
+    try{
+      var r=await fetch(API);if(!r.ok)throw new Error("HTTP "+r.status);
+      var data=await r.json();
+      allEvents=data.events||data||[];
+      localStorage.setItem("kl_events",JSON.stringify(allEvents));
+      break;
+    }catch(e){
+      console.warn("loadEvents attempt "+(attempt+1)+" failed:",e);
+      if(attempt<2)await new Promise(function(ok){setTimeout(ok,1500);});
+    }
+  }
   filtered=allEvents;renderCal();renderNuoviArrivi();
 }
 
