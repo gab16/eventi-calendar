@@ -5,11 +5,7 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  const NOCODB_TOKEN = process.env.NOCODB_TOKEN;
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-  const NOCODB_URL = process.env.NOCODB_URL || 'https://nocodb.tattionline.com';
-  const BASE_ID = process.env.NOCODB_BASE_ID || 'p8agcx6gvem4u30';
-  const TABLE_ID = process.env.NOCODB_EVENTS_TABLE || 'mrpiz5gilnibj2j';
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -36,11 +32,11 @@ export default async function handler(req, res) {
     }
 
     const mime = contentType || 'image/jpeg';
-    const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
-    const key = `flyers/${recordId}_${Date.now()}.${ext}`;
     const binaryData = Buffer.from(base64, 'base64');
 
-    // Step 1: Upload to R2
+    // Deterministic key: flyers/<recordId>.jpg — no PATCH to NocoDB needed
+    const key = `flyers/${recordId}.jpg`;
+
     const s3 = new S3Client({
       region: 'auto',
       endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -58,25 +54,6 @@ export default async function handler(req, res) {
     }));
 
     const publicUrl = `https://images.tattionline.com/${key}`;
-
-    // Step 2: Patch NocoDB record with R2 URL
-    const patchResp = await fetch(
-      `${NOCODB_URL}/api/v1/db/data/noco/${BASE_ID}/${TABLE_ID}/${recordId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'xc-token': NOCODB_TOKEN,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ flyer_url: publicUrl }),
-      }
-    );
-
-    if (!patchResp.ok) {
-      const detail = await patchResp.text();
-      return res.status(502).json({ error: 'NocoDB record patch failed', detail, imageUrl: publicUrl });
-    }
-
     return res.status(200).json({ success: true, imageUrl: publicUrl });
   } catch (e) {
     return res.status(502).json({ error: 'Upload failed', detail: e.message });

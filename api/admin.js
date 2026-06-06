@@ -50,9 +50,11 @@ export default async function handler(req, res) {
         hasMore = data.pageInfo?.isLastPage === false;
         page++;
       }
+      const R2_BASE = 'https://images.tattionline.com/flyers';
       const events = allRecords.map(f => {
-        const r2Url = f.flyer_url || null;
-        const { url, thumb } = r2Url ? { url: null, thumb: null } : parseAttachment(f.flyer_image);
+        const { url, thumb } = parseAttachment(f.flyer_image);
+        const r2Url = `${R2_BASE}/${f.Id}.jpg`;
+        const useR2 = !url;
         return {
           id: f.Id,
           event_name: f.event_name || '',
@@ -70,8 +72,8 @@ export default async function handler(req, res) {
           confidence: f.confidence || '',
           is_sponsored: !!f.is_sponsored,
           region: f.region || '',
-          flyer_image: r2Url || url,
-          flyer_thumb: r2Url || thumb,
+          flyer_image: useR2 ? r2Url : url,
+          flyer_thumb: useR2 ? r2Url : (thumb || url),
         };
       });
       return res.status(200).json({ events, count: events.length });
