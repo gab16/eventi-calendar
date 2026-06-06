@@ -49,7 +49,9 @@ export default async function handler(req, res) {
     };
 
     const events = (data.list || []).map(f => {
-      const attachment = parseAttachment(f.flyer_image);
+      // Prefer R2 URL (flyer_url) over NocoDB attachment (flyer_image)
+      const r2Url = f.flyer_url || null;
+      const attachment = r2Url ? null : parseAttachment(f.flyer_image);
       return {
         id: f.Id,
         event_name: f.event_name || '',
@@ -66,8 +68,8 @@ export default async function handler(req, res) {
         phone: f.phone || '',
         is_sponsored: !!f.is_sponsored,
         region: f.region || '',
-        flyer_image: imgUrl(attachment, null),
-        flyer_thumb: imgUrl(attachment, 'card_cover'),
+        flyer_image: r2Url || imgUrl(attachment, null),
+        flyer_thumb: r2Url || imgUrl(attachment, 'card_cover'),
       };
     });
 

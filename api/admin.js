@@ -51,7 +51,8 @@ export default async function handler(req, res) {
         page++;
       }
       const events = allRecords.map(f => {
-        const { url, thumb } = parseAttachment(f.flyer_image);
+        const r2Url = f.flyer_url || null;
+        const { url, thumb } = r2Url ? { url: null, thumb: null } : parseAttachment(f.flyer_image);
         return {
           id: f.Id,
           event_name: f.event_name || '',
@@ -69,8 +70,8 @@ export default async function handler(req, res) {
           confidence: f.confidence || '',
           is_sponsored: !!f.is_sponsored,
           region: f.region || '',
-          flyer_image: url,
-          flyer_thumb: thumb,
+          flyer_image: r2Url || url,
+          flyer_thumb: r2Url || thumb,
         };
       });
       return res.status(200).json({ events, count: events.length });
@@ -84,7 +85,7 @@ export default async function handler(req, res) {
       const { id, fields } = req.body;
       if (!id || !fields) return res.status(400).json({ error: 'Missing id or fields' });
       const allowed = ['event_name','date_start','date_end','time_start','location_name','address',
-        'category','organizer','price','description','language','phone','is_sponsored','region'];
+        'category','organizer','price','description','language','phone','is_sponsored','region','flyer_url'];
       const safeFields = {};
       for (const key of allowed) {
         if (key in fields) safeFields[key] = fields[key];
@@ -106,7 +107,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
       const allowed = ['event_name','date_start','date_end','time_start','location_name','address',
-        'category','organizer','price','description','language','phone','is_sponsored','region'];
+        'category','organizer','price','description','language','phone','is_sponsored','region','flyer_url'];
       const safeFields = {};
       for (const key of allowed) {
         if (key in fields && fields[key] !== '' && fields[key] != null) safeFields[key] = fields[key];
