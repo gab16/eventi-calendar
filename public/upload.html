@@ -93,6 +93,9 @@ function App(){
   }
 
   useEffect(()=>{
+    // Auto-auth for logged-in users
+    const user=localStorage.getItem('kl_user');
+    if(user){setAuthed(true);setPw('Tatti1234!');return;}
     const saved=sessionStorage.getItem('eventi_pw');
     if(saved){setPw(saved);(async()=>{
       try{
