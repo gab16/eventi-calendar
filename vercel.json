@@ -6,6 +6,7 @@
     { "source": "/api/auth", "destination": "/api/auth.js" },
     { "source": "/api/likes", "destination": "/api/likes.js" },
     { "source": "/api/generate-static", "destination": "/api/generate-static.js" },
-    { "source": "/admin", "destination": "/admin.html" }
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/upload", "destination": "/upload.html" }
   ]
 }
