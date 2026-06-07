@@ -369,7 +369,7 @@ window.addEventListener("popstate",function(e){
 });
 history.replaceState({screen:"cal"},"","#cal");
 function goHome(){showScreen("cal");selDay=null;renderCal()}
-function goAdd(){showScreen("add");resetAdd()}
+function goAdd(){window.location.href="/upload"}
 function goBackFromEvent(){
   if(selDay)showScreen("day");
   else showScreen("cal");
